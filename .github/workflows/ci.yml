@@ -1,0 +1,11 @@
+name: Manual-CI
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Standing By
+        run: echo "Placeholder Workflow"
