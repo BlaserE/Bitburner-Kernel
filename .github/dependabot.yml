@@ -1,0 +1,19 @@
+version: 2
+updates:
+  # Enable updates for GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  # Placeholder for future Docker/Container updates
+  # - package-ecosystem: "docker"
+  #   directory: "/"
+  #   schedule:
+  #     interval: "weekly"
+
+  # Placeholder for common language-specific updates
+  # - package-ecosystem: "npm" # or pip, cargo, gomod
+  #   directory: "/"
+  #   schedule:
+  #     interval: "weekly"
