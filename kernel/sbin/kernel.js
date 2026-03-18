@@ -35,7 +35,7 @@ class Kernel {
 
         this.ledger.registerProcess(KERNEL.PID, KERNEL.host, KERNEL.ramCost); // Register the kernel itself as a process on home with 0 RAM usage
 
-        this.ns.tprint("KERNEL: Online. Listening on Port " + this.bus);
+        this.ns.tprint(`KERNEL: Online. Request pipeline (1-20) active.`);
         
         while (true) {
 
@@ -95,15 +95,62 @@ class Kernel {
     async handleRequest(request) {
         switch (request.type) {
             case DataType.QUERY:
-                this.ns.print("Handling RAM Query...");
-                // Logic: Check home RAM, etc.
-                const response = { status: "OK", availableRam: 1024 }; 
+                let result;
+                const queryType = request.data.queryType;
                 
-                this.sendReply(request.channel, DataType.SUCCESS, response);
-                break;
+                switch (queryType) {
+                    case "NET_STATS":
+                        result = this.ledger.getNetworkStatus();
+                        break; // CRITICAL: Stop here
+                    case "PROCESS_LIST":
+                        result = this.ledger.getProcessList();
+                        break; // CRITICAL: Stop here
+                    default:
+                        result = { error: "Unknown Query Type: " + queryType };
+                }
+                // Send the reply after the sub-switch finishes
+                this.sendReply(request.channel, DataType.SUCCESS, result);
+                break; // Exit the DataType.QUERY block
+
+
 
             case DataType.EXEC:
-                // Logic for ns.exec goes here later
+                const { script, threads, args = [] } = request.data;
+                const scriptRam = this.ns.getScriptRam(script);
+                const totalRam = scriptRam * threads;
+
+                const targetHost = this.ledger.findHostForProcess(totalRam);
+
+                if (!targetHost) {
+                    this.ns.print(`ERROR: No host fits ${totalRam}GB for ${script}`);
+                    this.sendReply(request.channel, DataType.ERROR, { error: "INSUFFICIENT RAM", needed: totalRam });
+                } else {
+                    const pid = this._kernelExec(script, threads, args, targetHost);
+                    this.sendReply(request.channel, DataType.SUCCESS, { pid, host: targetHost });
+                }
+                break;
+
+            case DataType.BATCH_EXEC:
+                // We'll tackle this logic next!
+                break;
+
+            case DataType.KILL:
+                const pidToKill = request.data.pid;
+                if (this.ns.kill(pidToKill)) {
+                    this.ledger.freeProcess(pidToKill); // Sync ledger immediately
+                    this.sendReply(request.channel, DataType.SUCCESS, { killed: pidToKill });
+                } else {
+                    this.sendReply(request.channel, DataType.ERROR, { msg: "Failed to kill PID" });
+                }
+                break;
+
+            case DataType.BATCH_KILL:
+                // We'll tackle this logic next!
+                break;
+
+            case DataType.PING:
+                this.ns.print(`HANDSHAKE: Received from PID ${request.origin}`);
+                this.sendReply(request.channel, DataType.SUCCESS, { msg: "ACK: System Online" });
                 break;
 
             default:
@@ -111,10 +158,37 @@ class Kernel {
                 this.sendReply(request.channel, DataType.ERROR, { msg: "Invalid Type" });
         }
     }
-
+    /**
+     * The method called to reply to a request. It answers to the PID's private channel, so it goes directly to the requester.
+     * @param {int} channel 
+     * @param {DataType} type 
+     * @param {object} data 
+     */
     sendReply(channel, type, data) {
         // We use the same 'pack' logic but send it to the SENDER'S channel
         const msg = PortManager.pack(this.ns.pid, type, data);
         this.ns.writePort(channel, msg);
     }
+
+    /**
+     * THE ONE EXEC TO RULE THEM ALL.
+     * This method will handle them all.
+     * @param {string} script 
+     * @param {int} threads 
+     * @param {Array} args 
+     * @param {string} targetHost 
+     * @returns 
+     */
+    _kernelExec(script, threads, args, targetHost) {
+        const pid = this.ns.exec(script, targetHost, threads, ...args);
+
+        if (pid === 0) {
+            this.ns.print(`ERROR: Failed to exec ${script} on ${targetHost} with ${threads} threads.`);
+            return;
+        }
+        this.ledger.registerProcess(pid, targetHost, this.ns.getScriptRam(script) * threads);
+        return pid;
+    }
+
+
 }

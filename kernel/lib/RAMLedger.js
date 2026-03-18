@@ -112,4 +112,9 @@ export class RAMLedger {
         }
         return status;
     }
+
+    getProcessList() {
+        const processList = this.processes.entries();
+        return [...processList];
+    }
 }
