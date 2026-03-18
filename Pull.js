@@ -92,6 +92,10 @@ async function PullAllFiles (ns, CREDS, vData, flags)
     const localPath = file.path.replace(/^kernel\//, "")
     remoteManifest[localPath] = file.sha;
 
+    if (localPath.endsWith(".md")) {
+        localPath = localPath.replace(".md", ".txt");
+    }
+
     if (localManifest[localPath] === file.sha && ns.fileExists(localPath) && !flags.force) {
       ns.print(`Verified: ${localPath}`);
       continue;
