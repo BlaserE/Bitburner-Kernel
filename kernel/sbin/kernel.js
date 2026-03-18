@@ -1,4 +1,5 @@
-import { PortManager, DataType } from '/etc/ports.js';
+import { PortManager, DataType } from '/etc/Ports.js';
+import { RAMLedger } from '/lib/RAMLedger.js';
 
 /** @param {NS} ns **/
 export async function main(ns) {
