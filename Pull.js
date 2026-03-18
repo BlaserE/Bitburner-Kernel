@@ -103,7 +103,7 @@ async function PullAllFiles (ns, CREDS, vData, flags)
   }
 
   ns.write(MANIFEST_PATH, JSON.stringify(remoteManifest, null, 2),  "w");
-  ns.write(VERSION_PATH, vData.remote, "w");
+  ns.write(VERSION_PATH, `${vData.remote}`, "w");
 
   ns.rm("/tmp/repo_tree.txt")
   ns.tprint(`SUCCESS: Update kernel image to v${vData.remote} (${downloadCount} files updated)`);
