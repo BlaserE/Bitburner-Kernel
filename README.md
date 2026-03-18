@@ -2,12 +2,19 @@
 The philosophy behind this project was to create a foundation upon which I could build scripts in bitburner that would all play well with each other while centralizing management.
 
 You can pull the kernel to your instance using the following command :
-``wget https://raw.githubusercontent.com/BlaserE/Bitburner-Kernel/main/Pull.js Pull.txt``
+```
+wget https://raw.githubusercontent.com/BlaserE/Bitburner-Kernel/main/Pull.js Pull.js
+```
 
 You can alias it to the command `pull` using this :
-``alias -g pull="run Pull.js --all``
+```
+alias -g pull="run Pull.js --all"
+```
+
 or to pull a specific file  (NYI) :
-``alias -g pull="run Pull.js {file/path}``
+```
+alias -g pull-file="run Pull.js"
+```
 
 Pulling the latest version of the kernel may break your save. Do so at your own risk.
 
