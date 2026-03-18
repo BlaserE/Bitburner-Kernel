@@ -55,9 +55,9 @@ class Kernel {
 
 
     async listen() {
-        this.ns.tprint("KERNEL: Listening for requests...");
+        this.ns.print("KERNEL: Listening for requests...");
         let requests = 0;
-        // 
+        
         for (let port = 1; port <= 20; port++) {
             let raw;
 
@@ -69,11 +69,14 @@ class Kernel {
                     requests++;
                 }
             }
-
         }
-        this.ns.tprint(`KERNEL: Handled ${requests} requests.`);
+        this.ns.print(`KERNEL: Handled ${requests} requests.`);
     }
 
+    /**
+     * Method that runs every few seconds to check if any process in the ledger have died without
+     * being removed from the ledger.
+     */
     async runGarbageCollection() {
         const trackedPIDS = [...this.ledger.processes.keys()];
         this.ns.print(`GC: Tracking ${trackedPIDS.length} processes...`); 
@@ -85,6 +88,10 @@ class Kernel {
         }
     }
 
+    /**
+     * Method called when a request hits a port.
+     * @param {DataType} request 
+     */
     async handleRequest(request) {
         switch (request.type) {
             case DataType.QUERY:

@@ -73,4 +73,43 @@ export class RAMLedger {
         this.ns.print(`LEDGER: Reclaimed ${process.ram}GB from PID ${pid}`);
         return true;
     }
+
+    /**
+     * Method to get the current RAM usage and host server of a process by its PID.
+     * @param {int} PID 
+     */
+    getStatus(PID) {
+        const process = this.processes.get(PID);
+        if (!process) {
+            return null; // Process not found
+        }
+        return { host: process.host, ram: process.ram };
+    }
+
+    /**
+     * Method to get the status of a specific server.
+     * @param {string} hostname 
+     * @returns 
+     */
+    getServerStatus(hostname) {
+        return this.servers.get(hostname);
+    }
+
+    /**
+     * Method to get the status of the server network
+     * @returns 
+     */
+    getNetworkStatus() {
+        const status = {
+            TotalRAM: 0,
+            UsedRAM: 0,
+            Servers: []
+        };
+        for (const [hostname, stats] of this.servers.entries()) {
+            status.TotalRAM += stats.max;
+            status.UsedRAM += stats.used;
+            status.Servers.push(hostname)
+        }
+        return status;
+    }
 }
