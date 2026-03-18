@@ -47,6 +47,9 @@ const { OWNER, REPO, BRANCH } = CREDS;
 
   ns.tprint(`Synchronising with repo at ${OWNER}/${REPO} [${BRANCH}]`)
 
+  // gets the tree of the repo, which contains all files and their paths.
+  // in this case, we only care about the files in the kernel/ directory, which is where the kernel image is stored.
+  const treeUrl = `https://api.github.com/repos/${OWNER}/${REPO}/git/trees/${BRANCH}?recursive=1`;
   const tempFile = "/tmp/repo_tree.txt"
   await ns.wget(treeUrl, tempFile)
 
