@@ -8,12 +8,7 @@ wget https://raw.githubusercontent.com/BlaserE/Bitburner-Kernel/main/Pull.js Pul
 
 You can alias it to the command `pull` using this :
 ```
-alias -g pull="run Pull.js --all"
-```
-
-or to pull a specific file  (NYI) :
-```
-alias -g pull-file="run Pull.js"
+alias -g pull="run Pull.js"
 ```
 
 Pulling the latest version of the kernel may break your save. Do so at your own risk.
@@ -25,8 +20,8 @@ The kernel is intended to be the only script that is capable of doing `ns.exec`.
 
 ## Ports
 Here is a detailed list of every port and their uses :
-1 - SYS_HIGH : Critical commands and requests (KILL, SLEEP, etc)
-2 - SYS_LOW : Standard requests (registering PID, requesting resources, etc)
+(to be done)
 
 # Ledger.js
-The ledger is what holds the information of every server and their running processes, indicating available RAM
+The ledger is what holds the information of every server and their running processes, indicating available RAM.
+It is the source of truth for executing scripts.
