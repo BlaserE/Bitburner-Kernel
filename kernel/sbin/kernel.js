@@ -2,9 +2,6 @@ import { PortManager, DataType } from '/etc/ports.js';
 
 /** @param {NS} ns **/
 export async function main(ns) {
-    ns.disableLog("ALL");
-    ns.tprint("KERNEL: Booting...");
-
     const kernel = new Kernel(ns);
     await kernel.boot();
 }
@@ -12,23 +9,78 @@ export async function main(ns) {
 class Kernel {
     constructor(ns) {
         this.ns = ns;
-        this.bus = PortManager.BUS_LOW;
-        this.registry = new Map(); // Where we will track PIDs eventually
+        
+        this.ledger = new RAMLedger(ns); // Where we will track PIDs eventually
+        this.gcInterval = 2000; // How often to run garbage collection (in ms)
+        this.lastGC = Date.now();
     }
 
     async boot() {
+        this.ns.disableLog("ALL");
+        this.ns.tprint("KERNEL: Booting...");
+
+        // Define the kernel's own PID, RAM cost, and host for easy reference
+        const KERNEL = {
+            PID: this.ns.pid,
+            ramCost: this.ns.getScriptRam("/sbin/kernel.js"),
+            host: "home"
+        }
+
+        // Start by registering home and any purchased servers into the ledger
+        this.ledger.registerServer("home"); 
+        this.ns.getPurchasedServers().forEach(server => this.ledger.registerServer(server));
+
+        this.ns.tprint(`KERNEL: RAM Ledger initialized`)
+
+        this.ledger.registerProcess(KERNEL.PID, KERNEL.host, KERNEL.ramCost); // Register the kernel itself as a process on home with 0 RAM usage
+
         this.ns.tprint("KERNEL: Online. Listening on Port " + this.bus);
         
         while (true) {
-            const raw = this.ns.readPort(this.bus);
-            const request = PortManager.unpack(raw);
 
-            if (request) {
-                this.ns.print(`INBOUND: [${request.type}] from PID ${request.origin}`);
-                await this.handleRequest(request);
+            await this.listen();
+
+            // Gargage collection
+            if (Date.now() - this.lastGC > this.gcInterval) {
+                this.ns.print("Running Garbage Collection...");
+
+                await this.runGarbageCollection();
+                this.lastGC = Date.now();
             }
 
             await this.ns.sleep(20); // The "Heartbeat"
+        }
+    }
+
+
+    async listen() {
+        this.ns.tprint("KERNEL: Listening for requests...");
+        let requests = 0;
+        // 
+        for (let port = 1; port <= 20; port++) {
+            let raw;
+
+            while ((raw = this.ns.readPort(port)) !== "NULL PORT DATA") {
+                const request = PortManager.unpack(raw);
+                if (request) {
+                    this.ns.print(`INBOUND: [${request.type}] from PID ${request.origin}`);
+                    await this.handleRequest(request);
+                    requests++;
+                }
+            }
+
+        }
+        this.ns.tprint(`KERNEL: Handled ${requests} requests.`);
+    }
+
+    async runGarbageCollection() {
+        const trackedPIDS = [...this.ledger.processes.keys()];
+        this.ns.print(`GC: Tracking ${trackedPIDS.length} processes...`); 
+        for (const pid of trackedPIDS) {
+            if (!this.ns.isRunning(pid)) {
+                this.ns.print(`GC: Cleaning up PID ${pid}...`);
+                this.ledger.freeProcess(pid);
+            }
         }
     }
 
