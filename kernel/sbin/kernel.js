@@ -119,7 +119,7 @@ class Kernel {
                 const scriptRam = this.ns.getScriptRam(script);
                 const totalRam = scriptRam * threads;
 
-                const targetHost = this.ledger.findHostForProcess(totalRam);
+                const targetHost = this.ledger.findHostFor(totalRam);
 
                 if (!targetHost) {
                     this.ns.print(`ERROR: No host fits ${totalRam}GB for ${script}`);
