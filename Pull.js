@@ -28,7 +28,7 @@ export async function main(ns) {
 
   if (flags.all) {
     await PullAllFiles(ns, CREDS)
-    ns.tprint(`[Pull] Kernel image has been updated to latest.`)
+    //ns.tprint(`[Pull] Kernel image has been updated to latest.`)
   }
 
 }
@@ -72,5 +72,5 @@ const { OWNER, REPO, BRANCH } = CREDS;
   }
 
   ns.rm(tempFile)
-  ns.tprint("SUCCESS: Kernel image pulled and remapped to filesystem.");
+  ns.tprint("SUCCESS: Kernel image updated to latest and remapped to filesystem.");
 }
