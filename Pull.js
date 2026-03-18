@@ -39,7 +39,7 @@ async function CheckVersion(ns, CREDS)
 {
   const { OWNER, REPO, BRANCH, VERSION_PATH } = CREDS;
 
-  const versionUrl = `https://raw.githubusercontent.com/${OWNER}/${REPO}/${BRANCH}/kernel/etc/version.txt`;
+  const versionUrl = `https://raw.githubusercontent.com/${OWNER}/${REPO}/${BRANCH}/kernel/etc/version.txt?t=${Date.now()}`; // Cache buster
 
   await ns.wget(versionUrl, "/tmp/version.txt");
   const remoteVersion = ns.read("/tmp/version.txt").trim();
