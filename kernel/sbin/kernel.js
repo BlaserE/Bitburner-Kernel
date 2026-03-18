@@ -1,4 +1,4 @@
-import { PortManager, DataType } from '/etc/Ports.js';
+import { PortManager, DataType } from '/etc/ports.js';
 import { RAMLedger } from '/lib/RAMLedger.js';
 
 /** @param {NS} ns **/
