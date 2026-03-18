@@ -17,22 +17,25 @@ export async function main(ns) {
     OWNER: "BlaserE",
     REPO: "Bitburner-Kernel",
     BRANCH: flags.branch,
-    VERSION_PATH: "/etc/version.txt",
-    MANIFEST_PATH: "/etc/manifest.json"
+    VERSION_PATH: "etc/version.txt",
+    MANIFEST_PATH: "etc/manifest.json"
   };
 
 
   const vData = await CheckVersion(ns, CREDS);
-  if (vData.local === vData.remote && !flags.force) {
-    ns.tprint(`Kernel is already up to date (v${vData.local}). Use --force to override.`);
-    return;
-} // exits if the kernel is already up to date and --force is not used.
+  // --- LOGIC GATE FOR TERMINAL FEEDBACK ---
+  if (vData.local === vData.remote) {
+    if (flags.force) {
+      ns.tprint(`FORCE: Re-installing kernel image v${vData.local}...`);
+    } else {
+      ns.tprint(`Version v${vData.local} is current. Running integrity check...`);
+    }
+  } else {
+    ns.tprint(`UPGRADE: v${vData.local} -> v${vData.remote}`);
+  }
 
-  ns.tprint(`Upgrading kernel: v${vData.local} -> v${vData.remote}`);
-
-  await PullAllFiles(ns, CREDS, vData, flags)
-
-
+  // Always run the puller; it handles the heavy lifting via SHA comparison
+  await PullAllFiles(ns, CREDS, vData, flags);
 }
 
 async function CheckVersion(ns, CREDS) 
@@ -86,17 +89,17 @@ async function PullAllFiles (ns, CREDS, vData, flags)
   ns.tprint(`Found ${kernelFiles.length} kernel files. Mapping to root...`);
 
   for (const file of kernelFiles) {
-    const localPath = file.path.replace("kernel/", "")
+    const localPath = file.path.replace(/^kernel\//, "")
     remoteManifest[localPath] = file.sha;
 
     if (localManifest[localPath] === file.sha && ns.fileExists(localPath) && !flags.force) {
-      ns.print(`File is up to date: ${localPath}`);
+      ns.print(`Verified: ${localPath}`);
       continue;
     }
 
     const rawUrl = `https://raw.githubusercontent.com/${OWNER}/${REPO}/${BRANCH}/${file.path}`;
 
-    ns.print(`Downloading: ${localPath}`);
+    ns.tprint(`  -> Syncing: ${localPath}`);
     await ns.wget(rawUrl, localPath)
     downloadCount++;
     await ns.sleep(20);
