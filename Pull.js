@@ -64,7 +64,7 @@ const { OWNER, REPO, BRANCH } = CREDS;
   for (const file of files) {
     const localPath = file.path.replace("kernel/", "")
 
-    const rawUrl = `https://api.github.com/repos/${USER}/${REPO}/git/trees/${BRANCH}?recursive=1`;
+    const rawUrl = `https://api.github.com/repos/${OWNER}/${REPO}/git/trees/${BRANCH}?recursive=1`;
 
     ns.print(`Downloading: ${localPath}`);
     await ns.wget(rawUrl, localPath)
