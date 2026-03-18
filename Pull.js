@@ -90,11 +90,12 @@ async function PullAllFiles (ns, CREDS, vData, flags)
 
   for (const file of kernelFiles) {
     let localPath = file.path.replace(/^kernel\//, "")
-    remoteManifest[localPath] = file.sha;
-    this.ns.tprint(`[Pull] localPath: ${localPath}`);
+
     if (localPath.endsWith(".md")) {
         localPath = localPath.replace(".md", ".txt");
     }
+
+    remoteManifest[localPath] = file.sha;
 
     if (localManifest[localPath] === file.sha && ns.fileExists(localPath) && !flags.force) {
       ns.print(`Verified: ${localPath}`);
@@ -102,11 +103,35 @@ async function PullAllFiles (ns, CREDS, vData, flags)
     }
 
     const rawUrl = `https://raw.githubusercontent.com/${OWNER}/${REPO}/${BRANCH}/${file.path}`;
-
     ns.tprint(`  -> Syncing: ${localPath}`);
-    await ns.wget(rawUrl, localPath)
-    downloadCount++;
-    await ns.sleep(20);
+
+    const MAX_RETRIES = 3;
+    let attempt = 0;
+    let success = false;
+
+    while (attempt < MAX_RETRIES && !success) {
+        ns.print(`Downloading: ${localPath} (Attempt ${attempt + 1})`);
+        await ns.wget(rawUrl, localPath);
+
+        // --- VERIFICATION ---
+        const content = ns.read(localPath);
+        const blobString = `blob ${new TextEncoder().encode(content).length}\0${content}`;
+        const localSha = await getHash(blobString);
+
+        if (localSha === file.sha) {
+            success = true;
+            downloadCount++;
+            ns.print(`  [✓] Verified: ${localPath}`);
+        } else {
+            attempt++;
+            if (attempt < MAX_RETRIES) {
+                ns.tprint(`  [!] Hash mismatch for ${localPath}. Retrying in 15s...`);
+                await ns.sleep(15000); // The 15-second breather
+            } else {
+                ns.tprint(`  [X] FATAL: Failed to sync ${localPath} after ${MAX_RETRIES} tries. Check GitHub.`);
+            }
+        }
+    }
   }
 
   ns.write(MANIFEST_PATH, JSON.stringify(remoteManifest, null, 2),  "w");
@@ -114,4 +139,12 @@ async function PullAllFiles (ns, CREDS, vData, flags)
 
   ns.rm("/tmp/repo_tree.txt")
   ns.tprint(`SUCCESS: Update kernel image to v${vData.remote} (${downloadCount} files updated)`);
+}
+
+/** @param {string} string */
+async function getHash(string) {
+  const msgUint8 = new TextEncoder().encode(string);
+  const hashBuffer = await crypto.subtle.digest('SHA-1', msgUint8);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
