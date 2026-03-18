@@ -1,0 +1,29 @@
+# --- IDE / Editor Trash ---
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# --- Build & Dependencies ---
+node_modules/
+dist/
+build/
+.cache/
+
+# --- Bitburner Specifics ---
+# If you use a sync tool like 'Bitburner-Sync' or 'Netscript Definitions'
+types/
+bitburner.json
+
+# --- OS / Temporary Files ---
+*.tmp
+*.log
+/tmp/
+
+# --- Personal / Sensitive ---
+# NEVER push your actual API tokens or private configs
+.env
+auth.json
+secrets.txt
