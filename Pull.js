@@ -89,9 +89,9 @@ async function PullAllFiles (ns, CREDS, vData, flags)
   ns.tprint(`Found ${kernelFiles.length} kernel files. Mapping to root...`);
 
   for (const file of kernelFiles) {
-    const localPath = file.path.replace(/^kernel\//, "")
+    let localPath = file.path.replace(/^kernel\//, "")
     remoteManifest[localPath] = file.sha;
-
+    this.ns.tprint(`[Pull] localPath: ${localPath}`);
     if (localPath.endsWith(".md")) {
         localPath = localPath.replace(".md", ".txt");
     }
