@@ -3,6 +3,11 @@ import { RAMLedger } from '/lib/RAMLedger.js';
 
 /** @param {NS} ns **/
 export async function main(ns) {
+    const flags = ns.flags([
+        ['verbose', false], // Just makes more prints
+        ['reserve-ram', 15]
+    ])
+
     const kernel = new Kernel(ns);
     await kernel.boot();
 }
@@ -54,8 +59,13 @@ class Kernel {
     }
 
 
+    /**
+     * Listens to all ports, from 1 to 20. 
+     * @returns {Promise<void>}
+     */
     async listen() {
-        this.ns.print("KERNEL: Listening for requests...");
+
+        // this.ns.print("KERNEL: Listening for requests...");
         let requests = 0;
         
         for (let port = 1; port <= 20; port++) {
@@ -70,7 +80,9 @@ class Kernel {
                 }
             }
         }
-        this.ns.print(`KERNEL: Handled ${requests} requests.`);
+        if (requests > 0) {
+            this.ns.print(`KERNEL: Handled ${requests} requests.`);
+        }
     }
 
     /**
