@@ -3,8 +3,9 @@
 
 /** @param {NS} ns **/
 export class RAMLedger {
-    constructor(ns) {
+    constructor(ns, flags) {
         this.ns = ns;
+        this.flags = flags;
         this.servers = new Map(); // hostname -> { used: number, max: number }
         
         this.processes = new Map(); // pid -> { hostname: string, ramUsage: number }

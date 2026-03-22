@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "lib": [
+      "ESNext",
+      "DOM"
+    ],
+    "strict": true,
+    "noEmitOnError": true,
+    "outDir": "./kernel",
+    "rootDir": "./src",
+    "baseUrl": "./src",
+    "paths": {
+      "@ns": [
+        "./NetscriptDefinitions.d.ts"
+      ]
+    },
+    "removeComments": false,
+    "sourceMap": false
+  },
+  "include": [
+    "src/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "**/*.txt",
+    "README.md"
+  ]
+}

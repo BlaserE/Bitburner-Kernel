@@ -10,5 +10,5 @@ Only scripts in this folder should interact directly with sensitive hardware API
 - Interfacing with the game's hardware layer (scanning/server queries).
 
 ## Files
-- **kernel.js**: The "Brain." The only script permitted to use `ns.exec`.
+- **Kernel.js**: The "Brain." The only script permitted to use `ns.exec`.
 - **hw-scanner.js**: The "Eyes." Performs expensive scans and pushes updates via Port 3.

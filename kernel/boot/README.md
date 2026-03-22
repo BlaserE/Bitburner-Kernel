@@ -10,4 +10,4 @@ responsible for transitioning the game from a raw state to a managed state.
 - Bootstrapping the Kernel with sufficient priority.
 
 ## Files
-- **init.js**: The master toggle. Clears ports and executes `/sbin/kernel.js`.
+- **init.js**: The master toggle. Clears ports and executes `/sbin/Kernel.js`.
