@@ -1,4 +1,10 @@
 # Bitburner-Kernel
+
+![Version](https://img.shields.io/badge/version-1.0.0-blue?style=for-the-badge)
+![License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge)
+![Platform](https://img.shields.io/badge/Platform-Bitburner-orange?style=for-the-badge)
+
+
 ## Philosophy
 The philosophy behind this project was to create a foundation upon which I could build scripts in bitburner that would all play well with each other while centralizing management.
 I found the idea of making a "kernel" for Bitburner very funny. So I did it.
@@ -44,3 +50,7 @@ It is the source of truth for executing scripts.
 The database serves as a static source of information that normally requires `ns` method calls.
 It was created to solve a specific objective : keeping the processes 'lean'.
 To keep the RAM cost of scripts lean, it was decided that getting the info once was enough and storing it would be simpler.
+
+
+# License
+I am using an MIT license for this project. You are free to use it as you wish
