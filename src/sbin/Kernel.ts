@@ -1,10 +1,11 @@
 import {NS, AutocompleteData} from "../../NetscriptDefinitions";
-import {RAMLedger} from "../lib/RAMLedger";
+import {RAMLedger, IProcess, IServer} from "../lib/RAMLedger";
+import {KernelScript} from "../lib/KernelScript";
 
 /**
  * Interface for the kernel flags. It uses camelCase because kebab-case is too cool for JS.
  */
-interface IFlags {
+export interface IFlags {
     [key: string]: any;
 
     verbose: boolean;
@@ -49,7 +50,11 @@ Kernel Boot Options:
         return;
     }
     const kernel = new Kernel(ns, args);
-    await kernel.boot();
+    await kernel.run();
+
+    // the kernel exits the run loop.
+
+    kernel.shutdown()
 }
 
 /**
@@ -58,7 +63,8 @@ Kernel Boot Options:
  * It is intended to be the only script able to do `ns.exec`. It could potentially be configured to automatically kill any scripts that
  * it hasn't executed itself.
  */
-class Kernel {
+class Kernel extends KernelScript {
+
     private ns: NS;
     private ledger: RAMLedger;
     private readonly config: IFlags;
@@ -75,17 +81,18 @@ class Kernel {
         this.config = flags;
 
         // creates the ledger
-        this.ledger = new RAMLedger(ns, this.config.reservedRam);
+        this.ledger = new RAMLedger(this.config);
 
         // optionally creates the database for zero-cost queries.
 
         this.lastGC = Date.now(); // should be the last thing called in the constructor
     }
 
+
     /**
      * The thing that actually does begin kernel operations.
      */
-    async boot() {
+    async run(): Promise<void> {
         this.ns.disableLog("ALL");
         this.ns.tprint("KERNEL: Booting...");
 
@@ -94,6 +101,10 @@ class Kernel {
         // this.ns.getPurchasedServers().forEach(server => this.ledger.registerServer(server));
 
 
+    }
+
+
+    async boot() {
 
     }
 
