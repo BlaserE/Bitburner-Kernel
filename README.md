@@ -12,7 +12,6 @@ I found the idea of making a "kernel" for Bitburner very funny. So I did it.
 ## Pulling the kernel
 I have provided a script (`Pull.js`) that automatically pulls the latest kernel 'image' from this repository.
 
-
 You can pull the script to your instance using the following command :
 ```
 wget https://raw.githubusercontent.com/BlaserE/Bitburner-Kernel/main/Pull.js Pull.js
@@ -37,7 +36,11 @@ Here is a detailed list of every port and their uses : <br>
 2 - STANDARD (Register new resources, free up space, etc.) <br>
 3 - REQUESTS (Executing scripts, running scans, etc.) <br>
 ...<br>
-the rest remains to be done, once I actually start using them.
+the rest remains to be done, once I actually start using them. They will be added here as I use them.
+
+## KernelScript
+This is a class created to facilitate integrating more scripts into the kernel topology.
+Every script that is executed **has** to inherit from it.
 
 ## RAMLedger
 The ledger keeps track of every rooted server, it's RAM and running processes.
@@ -53,4 +56,5 @@ To keep the RAM cost of scripts lean, it was decided that getting the info once 
 
 
 # License
-I am using an MIT license for this project. You are free to use it as you wish
+I am using an MIT license for this project. You are free to use it as you wish and I am not responsible for any damage caused.
+It is free to use and is projected to remain this way forever.

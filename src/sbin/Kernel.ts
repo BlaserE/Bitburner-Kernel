@@ -91,7 +91,7 @@ class Kernel {
 
 
         this.ledger.registerServer("home");
-        this.ns.getPurchasedServers().forEach(server => this.ledger.registerServer(server));
+        // this.ns.getPurchasedServers().forEach(server => this.ledger.registerServer(server));
 
 
 
