@@ -1,4 +1,5 @@
-import { RAMLedger } from "../lib/RAMLedger";
+import { RAMLedger, CreateServerObject, CreateProcessObject } from "../lib/RAMLedger";
+import { PortManager } from "../lib/PortProtocol";
 /**
  * Flags schema for terminal autocomplete
  */
@@ -9,6 +10,11 @@ const schema = [
     ['aggressiveGc', false], // actively seeks PIDs on rooted servers and kills them if they are not registered.
     ['help', false] // prints a list of arguments and their description (NYI)
 ];
+/**
+ * Simply an autocomplete method for terminal. No clue how it works, ask the bitburner devs.
+ * @param data
+ * @param args
+ */
 export function autocomplete(data, args) {
     data.flags(schema);
     return [];
@@ -26,7 +32,9 @@ Kernel Boot Options:
         return;
     }
     const kernel = new Kernel(ns, args);
-    await kernel.boot();
+    await kernel.run();
+    // the kernel exits the run loop.
+    kernel.shutdown();
 }
 /**
  * The Kernel class. It is the central authority, serving as the executer of scripts and allocator of RAM.
@@ -36,15 +44,80 @@ Kernel Boot Options:
  */
 class Kernel {
     ns;
-    ledger;
+    processDB;
     config;
+    lastGC;
+    /**
+     * Creates the Kernel object, but does not begin operation. It only prepares it.
+     * @param ns
+     * @param flags
+     */
     constructor(ns, flags) {
         this.ns = ns;
         this.config = flags;
         // creates the ledger
-        this.ledger = new RAMLedger(ns, this.config.reservedRam);
-        // optionally creates the database for zero-cost queries.
+        this.processDB = new RAMLedger(this.config);
+        this.lastGC = Date.now(); // should be the last thing called in the constructor
     }
-    async boot() {
+    /**
+     * The thing that actually does begin kernel operations.
+     */
+    async run() {
+        this.ns.disableLog("ALL");
+        this.ns.tprint("KERNEL: Booting...");
+        const KernelServer = CreateServerObject(this.ns, this.ns.getHostname());
+        this.processDB.registerServer(KernelServer);
+        const KernelProcess = CreateProcessObject(this.ns.pid, "/sbin/Kernel.js", this.ns.getScriptRam("/sbin/Kernel.js"), this.ns.getHostname());
+        this.processDB.registerProcess(KernelProcess);
+        this.ns.tprint("KERNEL: RAMLedger initialized.");
+        while (true) {
+            await this.listen();
+            // Gargage collection
+            if (Date.now() - this.lastGC > this.config.gcInterval) {
+                this.ns.print("Running Garbage Collection...");
+                await this.runGarbageCollection();
+                this.lastGC = Date.now();
+            }
+            await this.ns.sleep(20); // The "Heartbeat"
+        }
+    }
+    async runGarbageCollection() {
+    }
+    /**
+     * The method that parses every port.
+     */
+    async listen() {
+        let requests = 0;
+        for (let port = 1; port <= 20; port++) {
+            let raw;
+            while ((raw = this.ns.readPort(port)) !== "NULL PORT DATA") {
+                const request = PortManager.unpack(raw);
+                if (request) {
+                    this.ns.print(`INBOUND: [${request.type}] from PID ${request.origin}`);
+                    await this.handleRequest(request);
+                    requests++;
+                }
+            }
+        }
+    }
+    /**
+     * Singular method to handle individual requests.
+     */
+    async handleRequest(request) {
+    }
+    handleExec(request) {
+    }
+    handleQuery(request) {
+    }
+    sendReply(targetPid, type, data) {
+        const channel = PortManager.getChannel(targetPid);
+        const msg = PortManager.pack(this.ns.pid, type, data);
+        this.ns.writePort(channel, msg);
+    }
+    /**
+     * Exits the script
+     */
+    shutdown() {
+        this.ns.exit();
     }
 }

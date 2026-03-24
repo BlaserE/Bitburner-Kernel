@@ -1,6 +1,7 @@
 import {NS, AutocompleteData} from "../../NetscriptDefinitions";
-import {RAMLedger, IProcess, IServer} from "../lib/RAMLedger";
+import {RAMLedger, IProcess, IServer, CreateServerObject, CreateProcessObject} from "../lib/RAMLedger";
 import {KernelScript} from "../lib/KernelScript";
+import {DataType, PortManager} from "../lib/PortProtocol";
 
 /**
  * Interface for the kernel flags. It uses camelCase because kebab-case is too cool for JS.
@@ -63,10 +64,9 @@ Kernel Boot Options:
  * It is intended to be the only script able to do `ns.exec`. It could potentially be configured to automatically kill any scripts that
  * it hasn't executed itself.
  */
-class Kernel extends KernelScript {
-
-    private ns: NS;
-    private ledger: RAMLedger;
+class Kernel {
+    private ns : NS
+    private processDB: RAMLedger;
     private readonly config: IFlags;
     private lastGC: number;
 
@@ -81,9 +81,9 @@ class Kernel extends KernelScript {
         this.config = flags;
 
         // creates the ledger
-        this.ledger = new RAMLedger(this.config);
+        this.processDB = new RAMLedger(this.config);
 
-        // optionally creates the database for zero-cost queries.
+
 
         this.lastGC = Date.now(); // should be the last thing called in the constructor
     }
@@ -96,16 +96,86 @@ class Kernel extends KernelScript {
         this.ns.disableLog("ALL");
         this.ns.tprint("KERNEL: Booting...");
 
+        const KernelServer = CreateServerObject(
+            this.ns, this.ns.getHostname()
+        )
+        this.processDB.registerServer(KernelServer);
 
-        this.ledger.registerServer("home");
-        // this.ns.getPurchasedServers().forEach(server => this.ledger.registerServer(server));
+        const KernelProcess = CreateProcessObject(
+            this.ns.pid, "/sbin/Kernel.js", this.ns.getScriptRam("/sbin/Kernel.js"), this.ns.getHostname()
+        )
+        this.processDB.registerProcess(KernelProcess);
+
+        this.ns.tprint("KERNEL: RAMLedger initialized.");
+
+        while (true) {
+
+            await this.listen()
+
+            // Gargage collection
+            if (Date.now() - this.lastGC > this.config.gcInterval) {
+                this.ns.print("Running Garbage Collection...");
+
+                await this.runGarbageCollection();
+                this.lastGC = Date.now();
+            }
+
+            await this.ns.sleep(20); // The "Heartbeat"
+        }
 
 
     }
 
+    async runGarbageCollection(): Promise<void> {
 
-    async boot() {
+    }
 
+    /**
+     * The method that parses every port.
+     */
+    async listen(){
+
+        let requests = 0;
+        for (let port = 1; port <= 20; port++) {
+            let raw;
+
+            while ((raw = this.ns.readPort(port)) !== "NULL PORT DATA") {
+                const request = PortManager.unpack(raw);
+                if (request) {
+                    this.ns.print(`INBOUND: [${request.type}] from PID ${request.origin}`);
+                    await this.handleRequest(request);
+                    requests++;
+                }
+            }
+        }
+    }
+
+    /**
+     * Singular method to handle individual requests.
+     */
+    async handleRequest(request:any) : Promise<void> {
+
+    }
+
+    private handleExec(request:any) : void {
+
+    }
+
+    private handleQuery(request:any) : void {
+
+    }
+
+    private sendReply(targetPid: number, type: any, data: any): void {
+        const channel = PortManager.getChannel(targetPid);
+        const msg = PortManager.pack(this.ns.pid, type, data);
+        this.ns.writePort(channel, msg);
+    }
+
+    /**
+     * Exits the script
+     */
+    shutdown(): void {
+        this.ns.exit()
     }
 
 }

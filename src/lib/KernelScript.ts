@@ -1,9 +1,11 @@
 // 1. The Contract: Every script must be able to do these things
 import {NS} from "../../NetscriptDefinitions";
+import {DataType, PortManager} from "./PortProtocol";
+//import {IKernelPacket, KernelSignal, SignalPayloadMap} from "./PortProtocol";
 
 interface IKernelScript {
     register(): void;
-    handleMessage(msg: any): void;
+    //handleMessage(msg: any): void;
     shutdown(): void;
 }
 
@@ -14,10 +16,6 @@ export abstract class KernelScript implements IKernelScript {
     constructor(ns: NS) {
         this.ns = ns;
         this.register(); // Automatic on boot
-    }
-
-    handleMessage(msg: any): void {
-        throw new Error("Method not implemented.");
     }
 
     // Default implementation: Can be overridden if needed
@@ -37,5 +35,16 @@ export abstract class KernelScript implements IKernelScript {
     public shutdown(): void {
         this.ns.writePort(2, JSON.stringify({ pid: this.ns.pid, type: 'EXIT' }));
         this.ns.exit();
+    }
+
+    /**
+     * Class method for sending signals on the port.
+     * @param type
+     * @param payload
+     * @protected
+     */
+    protected sendSignal(type: any, payload: any): void {
+        const packet = PortManager.pack(this.ns.pid, type,  payload)
+        this.ns.writePort(2, JSON.stringify(packet));
     }
 }

@@ -48,7 +48,6 @@ export const CreateProcessObject = (pid: number, script: string, ramCost: number
  */
 export class RAMLedger {
     private servers: Map<string, IServer>;
-    private flags: IFlags
     private reservedRam: number;
 
     constructor(flags: IFlags) {
@@ -88,17 +87,17 @@ export class RAMLedger {
     /**
      * Locates a process by PID on a specific server, frees its RAM, and deletes it.
      * Usually, only dead scripts are freed.
-     * @param {string} hostname Name of the server the script runs on.
      * @param {number} pid The PID of the process to be freed.
      */
-    public freeProcess(hostname: string, pid: number): void {
-        const server = this.servers.get(hostname);
-        if (!server) return;
-
-        const process = server.processes.get(pid);
-        if (process) {
-            server.usedRam -= process.ramCost;
-            server.processes.delete(pid);
+    public freeProcess(pid: number): void {
+        // The "True" way: Iterate through the hardware nodes to find the process
+        for (const server of this.servers.values()) {
+            if (server.processes.has(pid)) {
+                const process = server.processes.get(pid)!;
+                server.usedRam -= process.ramCost;
+                server.processes.delete(pid);
+                return; // Found and freed
+            }
         }
     }
 
