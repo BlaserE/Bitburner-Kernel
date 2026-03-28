@@ -2,40 +2,82 @@
  * /etc/ports.ts
  */
 
-export const DataType = {
-    EXEC: "EXEC", // for single scripts, regardless of threads (eg, ns.share)
-    BATCH_EXEC: "BATCH_EXEC", // for multiple scripts in one request, each with their own thread count. (eg, HGHW)
-    KILL: "KILL", // kills a process by PID
-    BATCH_KILL: "BATCH_KILL", // kills multiple PIDs in one request
-    QUERY: "QUERY", // for querying the kernel for information. Specify a "queryType" in the data field to specify what info you want
-    BATCH_QUERY: "BATCH_QUERY", // for querying the kernel for multiple pieces of information in one request. Data field should contain an array of queryTypes.
-    PING: "PING",
-    HANDSHAKE: "HANDSHAKE",
-    BATCH_PING: "BATCH_PING", // for checking if the kernel is responsive. Data field can specify how many pings to send in one request.
-    SUCCESS: "SUCCESS", // response to a request, indicating it was successful. Data field can be used for the response body.
-    ERROR: "ERROR" // response to a request, indicating it failed. Data field can be used for the error message.
-};
+export interface IExecData {
+    script: string;
+    host: string;
+    threads: number;
+    args: (string | number | boolean)[];
+}
+
+export interface IKillData {
+    pid: number;
+}
+
+export interface IQueryData {
+    queryType: "RAM" | "PROCESSES" | "NODES";
+}
+
+/**
+ * The type of request
+ */
+export type IPacket =
+    | { type: "EXEC"; data: IExecData }
+    | { type: "KILL"; data: IKillData }
+    | { type: "QUERY"; data: IQueryData }
+    | { type: "PING"; data: { msg: string } };
 
 
+/**
+ * The actual payload being sent. This is what goes in the ports as requests
+ */
+export interface IRequestPacket {
+    origin: number;
+    channel: number;
+    payload: IPacket; // The type-safe interior
+    sentAt: number;
+}
 
+// Bus Architecture
+export enum BusChannels {
+    // === RING 0: HARDWARE INTERRUPTS ===
+    // Preempts the normal tick loop. Handled immediately.
+    CRITICAL = 1,   // KILL, SHUTDOWN. Recovers RAM forcefully.
+
+    // === RING 1: STATE RECONCILIATION (Garbage Collection) ===
+    // Must process BEFORE new allocations so we have absolute maximum RAM available.
+    REGISTER = 2,   // FREE RAM. Processes dying naturally (EXIT signals), new servers rooted.
+
+    // === RING 2: PENDING STATE RESOLUTION ===
+    // Finalizes "Ghost RAM". When the Kernel EXECs, it temporarily reserves RAM.
+    // This bus confirms the script actually booted.
+    HANDSHAKE = 4,
+
+    // === RING 3: ALLOCATION & MUTATION ===
+    // Safe to process now because Ring 1 and 2 guarantee the RAM Ledger is 100% accurate.
+    DISPATCH = 5,       // Spawns scripts. Kernel immediately deducts from internal ledger.
+
+    // === RING 4: READ-ONLY & LOW PRIORITY ===
+    // Processed last so that queries get the post-reconciliation, post-allocation truth.
+    QUERY = 6,      // Network mapping, RAM requests, PINGs.
+    DEFAULT = 20,   // Uncategorized generic traffic.
+}
 
 export class PortManager {
-    // Bus Architecture
-    static readonly BUS_CRITICAL = 1;
-    static readonly BUS_MUTATE   = 2;
-    static readonly BUS_EXEC     = 3;
-    static readonly BUS_QUERY    = 4;
-    static readonly BUS_HANDSHAKE = 15;
-    static readonly BUS_DEFAULT  = 20;
 
     static readonly OFFSET = 1000;
 
+    /**
+     * Returns the private channel that the kernel uses to communicate with the process.
+     * It is the PID + offset, so PID + 1000
+     * @param pid The process ID of the process making the communication.
+     */
     static getChannel(pid: number): number {
         return pid + PortManager.OFFSET;
     }
 
     /**
      * Unpacks and casts the data to a generic packet type.
+     * @param {string} rawData The raw data to be unpacked into a json, obtained by reading the port request.
      */
     static unpack(rawData: string) {
         if (!rawData || rawData === "NULL PORT DATA") return null;
@@ -48,14 +90,16 @@ export class PortManager {
 
     /**
      * Packs data into a JSON string with strict type enforcement.
+     * @param {number} pid
+     * @param {IPacket} packet
      */
-    static pack(pid: number, type: any, data: any): string {
-        return JSON.stringify({
-            origin: pid,
-            channel: PortManager.getChannel(pid),
-            type: type,
-            data: data,
-            sentAt: Date.now()
-        });
+    static pack(pid: number, packet: IPacket): IRequestPacket {
+        const request: IRequestPacket = {
+            channel: 0,
+            payload: packet,
+            sentAt: 0,
+            origin: pid
+        }
+        return request;
     }
 }

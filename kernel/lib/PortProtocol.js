@@ -14,6 +14,15 @@ export const DataType = {
     SUCCESS: "SUCCESS", // response to a request, indicating it was successful. Data field can be used for the response body.
     ERROR: "ERROR" // response to a request, indicating it failed. Data field can be used for the error message.
 };
+export var BusChannels;
+(function (BusChannels) {
+    BusChannels[BusChannels["CRITICAL"] = 1] = "CRITICAL";
+    BusChannels[BusChannels["RESOURCE"] = 2] = "RESOURCE";
+    BusChannels[BusChannels["HANDSHAKE"] = 3] = "HANDSHAKE";
+    BusChannels[BusChannels["EXEC"] = 4] = "EXEC";
+    BusChannels[BusChannels["QUERY"] = 5] = "QUERY";
+    BusChannels[BusChannels["DEFAULT"] = 20] = "DEFAULT";
+})(BusChannels || (BusChannels = {}));
 export class PortManager {
     // Bus Architecture
     static BUS_CRITICAL = 1;
@@ -23,11 +32,17 @@ export class PortManager {
     static BUS_HANDSHAKE = 15;
     static BUS_DEFAULT = 20;
     static OFFSET = 1000;
+    /**
+     * Returns the private channel that the kernel uses to communicate with the process.
+     * It is the PID + offset, so PID + 1000
+     * @param pid The process ID of the process making the communication.
+     */
     static getChannel(pid) {
         return pid + PortManager.OFFSET;
     }
     /**
      * Unpacks and casts the data to a generic packet type.
+     * @param {string} rawData The raw data to be unpacked into a json, obtained by reading the port request.
      */
     static unpack(rawData) {
         if (!rawData || rawData === "NULL PORT DATA")
@@ -41,12 +56,15 @@ export class PortManager {
     }
     /**
      * Packs data into a JSON string with strict type enforcement.
+     * @param {number} pid
+     * @param {any} type
+     * @param {any} data
      */
     static pack(pid, type, data) {
         return JSON.stringify({
             origin: pid,
             channel: PortManager.getChannel(pid),
-            type: type,
+            type: BusChannels,
             data: data,
             sentAt: Date.now()
         });

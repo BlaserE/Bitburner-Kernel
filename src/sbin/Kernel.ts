@@ -65,7 +65,7 @@ Kernel Boot Options:
  * it hasn't executed itself.
  */
 class Kernel {
-    private ns : NS
+    private ns: NS
     private processDB: RAMLedger;
     private readonly config: IFlags;
     private lastGC: number;
@@ -82,7 +82,6 @@ class Kernel {
 
         // creates the ledger
         this.processDB = new RAMLedger(this.config);
-
 
 
         this.lastGC = Date.now(); // should be the last thing called in the constructor
@@ -133,7 +132,7 @@ class Kernel {
     /**
      * The method that parses every port.
      */
-    async listen(){
+    async listen() {
 
         let requests = 0;
         for (let port = 1; port <= 20; port++) {
@@ -153,15 +152,15 @@ class Kernel {
     /**
      * Singular method to handle individual requests.
      */
-    async handleRequest(request:any) : Promise<void> {
+    async handleRequest(request: any): Promise<void> {
 
     }
 
-    private handleExec(request:any) : void {
+    private handleExec(request: any): void {
 
     }
 
-    private handleQuery(request:any) : void {
+    private handleQuery(request: any): void {
 
     }
 

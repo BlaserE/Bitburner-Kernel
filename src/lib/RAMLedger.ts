@@ -1,5 +1,5 @@
 // ---------------------------------------------------------
-// INTERFACES (The Shape of the Data)
+// INTERFACES for the ram registry
 // ---------------------------------------------------------
 import {IFlags} from "../sbin/Kernel";
 
@@ -13,7 +13,7 @@ export interface IServer {
 export interface IProcess {
     pid: number;
     script: string;
-    ramCost: number;
+    ramCost: number; // equal to ram * thread
     hostname: string;
 }
 
