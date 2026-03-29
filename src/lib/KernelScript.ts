@@ -1,6 +1,6 @@
 // 1. The Contract: Every script must be able to do these things
 import {NS} from "../../NetscriptDefinitions";
-import {PortManager, BusChannels} from "./PortProtocol";
+import {PortManager, BusChannels, IPacket} from "./PortProtocol";
 //import {IKernelPacket, KernelSignal, SignalPayloadMap} from "./PortProtocol";
 
 
@@ -66,14 +66,22 @@ interface IKernelScript {
 // 2. The Base Class: Implements the "Standard" behavior
 export abstract class KernelScript implements IKernelScript {
     protected ns: NS;
+    protected PrivateChannel: number;
+    protected NULL_PORT = "NULL PORT DATA";
 
     constructor(ns: NS) {
         this.ns = ns;
-        this.register(); // Automatic on boot
+        this.PrivateChannel = PortManager.getChannel(this.ns.pid);
     }
 
     // Default implementation: Can be overridden if needed
-    public register(): void {
+    public async register(): Promise<void> {
+        const handshake: IPacket = {
+            type: "HANDSHAKE",
+            data: { pid: this.ns.pid }
+        }
+
+        await this.sendAndAwait(DataType.HANDSHAKE, handshake);
 
     }
 
@@ -81,6 +89,11 @@ export abstract class KernelScript implements IKernelScript {
     abstract run(): Promise<void>;
 
     public shutdown(): void {
+        const process: IPacket = {
+            type: "FREE_PROCESS",
+            data: { pid: this.ns.pid}
+        }
+        this.sendSignal(DataType.FREE_PROCESS, process);
         this.ns.exit();
     }
 
@@ -90,7 +103,39 @@ export abstract class KernelScript implements IKernelScript {
      * @param payload
      * @protected
      */
-    protected sendSignal(type: any, payload: any): void {
+    protected sendSignal(type: string, payload: IPacket): boolean {
+        const bus = RouteRecord[type];
 
+        if (bus == undefined) {
+            this.ns.print(`ERROR: No defined route in RouteRecord for signal type : ${type}`);
+            return false;
+        }
+
+        const request = PortManager.pack(this.ns.pid, payload);
+        const success = this.ns.tryWritePort(bus, request)
+
+        if (!success) {
+            this.ns.print(`WARNING: Write to port ${bus} unsuccessful`);
+        }
+        return success;
+    }
+
+    protected async sendAndAwait(type: string, payload: IPacket): Promise<any> {
+        // flush port cache
+        while (this.ns.peek(this.PrivateChannel) !== this.NULL_PORT) {
+            this.ns.readPort(this.PrivateChannel);
+        }
+
+        const success = this.sendSignal(type, payload);
+        if (!success) return;
+
+        // waits for an answer
+        await this.ns.nextPortWrite(this.PrivateChannel)
+
+        return this.readPrivatePort();
+    }
+
+    protected readPrivatePort(): any {
+        return PortManager.unpack(this.ns.readPort(this.PrivateChannel));
     }
 }

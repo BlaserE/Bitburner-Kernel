@@ -166,8 +166,8 @@ class Kernel {
 
     private sendReply(targetPid: number, type: any, data: any): void {
         const channel = PortManager.getChannel(targetPid);
-        const msg = PortManager.pack(this.ns.pid, type, data);
-        this.ns.writePort(channel, msg);
+        // const msg = PortManager.pack(this.ns.pid, type, data);
+        //  this.ns.writePort(channel, msg);
     }
 
     /**

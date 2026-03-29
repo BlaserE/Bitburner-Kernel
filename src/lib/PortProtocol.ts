@@ -17,6 +17,14 @@ export interface IQueryData {
     queryType: "RAM" | "PROCESSES" | "NODES";
 }
 
+export interface IFreeProcess {
+    pid: number;
+}
+
+export interface IHandshake {
+    pid: number;
+}
+
 /**
  * The type of request
  */
@@ -24,8 +32,9 @@ export type IPacket =
     | { type: "EXEC"; data: IExecData }
     | { type: "KILL"; data: IKillData }
     | { type: "QUERY"; data: IQueryData }
-    | { type: "PING"; data: { msg: string } };
-
+    | { type: "PING"; data: { msg: string } }
+    | { type: "FREE_PROCESS", data: IFreeProcess }
+    | { type: "HANDSHAKE", data: IHandshake };
 
 /**
  * The actual payload being sent. This is what goes in the ports as requests
@@ -92,14 +101,15 @@ export class PortManager {
      * Packs data into a JSON string with strict type enforcement.
      * @param {number} pid
      * @param {IPacket} packet
+     * @return {string} Returns a string that can written to the ports.
      */
-    static pack(pid: number, packet: IPacket): IRequestPacket {
+    static pack(pid: number, packet: IPacket): string {
         const request: IRequestPacket = {
-            channel: 0,
+            origin: pid,
+            channel: this.getChannel(pid),
             payload: packet,
-            sentAt: 0,
-            origin: pid
+            sentAt: Date.now(),
         }
-        return request;
+        return JSON.stringify(request);
     }
 }
