@@ -145,7 +145,7 @@ class Kernel {
         this.sendSignal(PortManager.getChannel(port), reply);
     }
     sendSignal(channel, request) {
-        const requestString = PortManager.pack(0, request);
+        const requestString = PortManager.pack(this.ns.pid, request);
         const success = this.ns.tryWritePort(channel, requestString);
         if (!success) {
             this.ns.tprint(`[Port Protocol] Failed to reach PID: ${channel}`);

@@ -208,7 +208,7 @@ class Kernel {
     }
 
     sendSignal(channel:number, request:IPacket) {
-        const requestString = PortManager.pack(0, request);
+        const requestString = PortManager.pack(this.ns.pid, request);
 
         const success = this.ns.tryWritePort(channel, requestString);
 
