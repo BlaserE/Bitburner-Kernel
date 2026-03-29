@@ -88,10 +88,10 @@ export class PortManager {
      * Unpacks and casts the data to a generic packet type.
      * @param {string} rawData The raw data to be unpacked into a json, obtained by reading the port request.
      */
-    static unpack(rawData: string) {
+    static unpack(rawData: string): any {
         if (!rawData || rawData === "NULL PORT DATA") return null;
         try {
-            return JSON.parse(rawData);
+            return JSON.parse(rawData) as IRequestPacket;
         } catch {
             return null;
         }
