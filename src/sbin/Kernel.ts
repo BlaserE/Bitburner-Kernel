@@ -189,7 +189,7 @@ class Kernel {
     performHandshake (destination: number) {
         const handshake: IPacket = {
             type: "HANDSHAKE",
-            data : { pid: 0 } // 0 because kernel is root
+            data : { pid: this.ns.pid } // 0 because kernel is root
         }
         // adds offset
         this.sendReply(destination, handshake);
@@ -218,7 +218,32 @@ class Kernel {
     }
 
     runGarbageCollection(): void {
-        
+        for (const [hostname, server] of this.processDB.getAllServers()) {
+
+            const actualPids = this.ns.ps(hostname).map(p => p.pid);
+
+            const report = this.processDB.reconcile(hostname, actualPids);
+
+            if (this.config.verbose && report.dead.length > 0) {
+                // processes already dead, no need to kill anything.
+                this.ns.print(`[GarbageCollector] Reclaimed RAM from ${report.dead.length} dead PIDs on host ${hostname}`);
+            }
+
+            // the KILLER
+            if (this.config.aggressiveGc) {
+                for (const roguePid of report.rogue) {
+                    // never kills the kernel.
+                    // KERNELS NEVER DIE
+                    if (roguePid === this.ns.pid) continue;
+
+                    this.ns.print(`[GarbageCollector] Aggressive killing of rogue PID ${roguePid} on host ${hostname}`);
+                    this.ns.kill(roguePid);
+                }
+            }
+
+        }
+
+
     }
 
 }

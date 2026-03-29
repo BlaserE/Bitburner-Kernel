@@ -19,6 +19,14 @@ export interface IProcess {
 }
 
 /**
+ * Interface for exporting the diff of the reconcile process.
+ */
+export interface IReconcileResult {
+    dead: number[];
+    rogue: number[];
+}
+
+/**
  * Creates the server object for the ledger using only the server name
  * @param {NS} ns Netscript object
  * @param {string} hostname The name of the server
@@ -47,13 +55,18 @@ export const CreateProcessObject = (pid: number, script: string, ramCost: number
 /**
  * The RAMLedger is the class that the kernel uses to register processes across the rooted network.
  * It is the accountant of the kernel.
+ *
+ * TODO: The RAMLedger will extend a basic DB class. It will also map the whole network, rather than the rooted servers.
+ * TODO: For that, more data about the servers needs to be held as well.
  */
 export class RAMLedger {
     private servers: Map<string, IServer>;
+    private pidToHost: Map<number, string>;
     private reservedRam: number;
 
     constructor(flags: IFlags) {
         this.servers = new Map();
+        this.pidToHost = new Map();
         this.reservedRam = flags.reservedRam;
     }
 
@@ -84,6 +97,8 @@ export class RAMLedger {
         // Add to the server's local map and deduct from its available pool
         server.processes.set(process.pid, process);
         server.usedRam += process.ramCost;
+
+        this.pidToHost.set(process.pid, server.hostname);
     }
 
     /**
@@ -92,15 +107,50 @@ export class RAMLedger {
      * @param {number} pid The PID of the process to be freed.
      */
     public freeProcess(pid: number): void {
-        // The "True" way: Iterate through the hardware nodes to find the process
-        for (const server of this.servers.values()) {
-            if (server.processes.has(pid)) {
-                const process = server.processes.get(pid)!;
+        const hostname = this.pidToHost.get(pid);
+        if (!hostname) return;
+
+        const server = this.servers.get(hostname);
+        if (server) {
+            const process = server.processes.get(pid);
+            if (process) {
                 server.usedRam -= process.ramCost;
-                server.processes.delete(pid);
-                return; // Found and freed
+                server.processes.delete(process.pid);
             }
         }
+        this.pidToHost.delete(pid);
+    }
+
+
+
+    public reconcile(hostname:string, actualPids: number[]): IReconcileResult {
+        const server = this.servers.get(hostname);
+        const result : IReconcileResult = {dead: [], rogue : []}
+        if (!server) return result;
+
+        // creates a set for O(1) lookup
+        const livePids = new Set(actualPids);
+
+        // finds dead processes
+        for (const [pid, process] of server.processes.entries()) {
+            if (!livePids.has(pid)) {
+                // adds the dead
+                result.dead.push(pid);
+
+                // clears the cache
+                server.usedRam -= process.ramCost;
+                server.processes.delete(pid);
+                this.pidToHost.delete(pid);
+            }
+        }
+
+        for (const pid of actualPids) {
+            if (!server.processes.has(pid)) {
+                result.rogue.push(pid);
+            }
+        }
+
+        return result;
     }
 
     /**
@@ -112,6 +162,13 @@ export class RAMLedger {
 
         const reserved = hostname === 'home' ? this.reservedRam : 0;
         return Math.max(0, server.maxRam - server.usedRam - reserved);
+    }
+
+    /**
+     * Returns all the servers registered in the RAMLedger.
+     */
+    public getAllServers(): Map<string, IServer> {
+        return this.servers;
     }
 
 }

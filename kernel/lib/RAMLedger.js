@@ -26,12 +26,17 @@ export const CreateProcessObject = (pid, script, ramCost, hostname, registered =
 /**
  * The RAMLedger is the class that the kernel uses to register processes across the rooted network.
  * It is the accountant of the kernel.
+ *
+ * TODO: The RAMLedger will extend a basic DB class. It will also map the whole network, rather than the rooted servers.
+ * TODO: For that, more data about the servers needs to be held as well.
  */
 export class RAMLedger {
     servers;
+    pidToHost;
     reservedRam;
     constructor(flags) {
         this.servers = new Map();
+        this.pidToHost = new Map();
         this.reservedRam = flags.reservedRam;
     }
     /**
@@ -60,6 +65,7 @@ export class RAMLedger {
         // Add to the server's local map and deduct from its available pool
         server.processes.set(process.pid, process);
         server.usedRam += process.ramCost;
+        this.pidToHost.set(process.pid, server.hostname);
     }
     /**
      * Locates a process by PID on a specific server, frees its RAM, and deletes it.
@@ -67,15 +73,43 @@ export class RAMLedger {
      * @param {number} pid The PID of the process to be freed.
      */
     freeProcess(pid) {
-        // The "True" way: Iterate through the hardware nodes to find the process
-        for (const server of this.servers.values()) {
-            if (server.processes.has(pid)) {
-                const process = server.processes.get(pid);
+        const hostname = this.pidToHost.get(pid);
+        if (!hostname)
+            return;
+        const server = this.servers.get(hostname);
+        if (server) {
+            const process = server.processes.get(pid);
+            if (process) {
                 server.usedRam -= process.ramCost;
-                server.processes.delete(pid);
-                return; // Found and freed
+                server.processes.delete(process.pid);
             }
         }
+        this.pidToHost.delete(pid);
+    }
+    reconcile(hostname, actualPids) {
+        const server = this.servers.get(hostname);
+        const result = { dead: [], rogue: [] };
+        if (!server)
+            return result;
+        // creates a set for O(1) lookup
+        const livePids = new Set(actualPids);
+        // finds dead processes
+        for (const [pid, process] of server.processes.entries()) {
+            if (!livePids.has(pid)) {
+                // adds the dead
+                result.dead.push(pid);
+                // clears the cache
+                server.usedRam -= process.ramCost;
+                server.processes.delete(pid);
+                this.pidToHost.delete(pid);
+            }
+        }
+        for (const pid of actualPids) {
+            if (!server.processes.has(pid)) {
+                result.rogue.push(pid);
+            }
+        }
+        return result;
     }
     /**
      * Utility method for the Kernel to know how much room is left.
@@ -86,5 +120,11 @@ export class RAMLedger {
             return 0;
         const reserved = hostname === 'home' ? this.reservedRam : 0;
         return Math.max(0, server.maxRam - server.usedRam - reserved);
+    }
+    /**
+     * Returns all the servers registered in the RAMLedger.
+     */
+    getAllServers() {
+        return this.servers;
     }
 }

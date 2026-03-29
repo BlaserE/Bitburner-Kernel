@@ -56,7 +56,7 @@ export abstract class KernelScript implements IKernelScript {
         }
 
         const data = await this.sendAndAwait(DataType.HANDSHAKE, handshake) as IRequestPacket;
-
+        
         this.ns.tprint(data)
     }
 
