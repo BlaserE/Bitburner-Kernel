@@ -1,8 +1,12 @@
 /** * Feature-Complete Repo Puller
- * Usage:
- * run pull.js --all                 (Pulls the whole repo)
- * run pull.js /etc/ports.js         (Pulls a single file)
- * run pull.js --all --branch dev    (Pulls the dev branch)
+ * type `run Pull.js` in the terminal to automatically pull from the main branch
+ * You can force it to pull every fill indivually if they were modified inside bitburner
+ * using `run Pull.js --force`
+ * You can define which branch to pull from using the branch flag :
+ * `run Pull.js --branch main` -> `run Pull.js --branch dev`.
+ * It is recommended to add an alias to it.
+ * `alias -g pull="run Pull.js"`
+ * The flags still work with the alias.
  **/
 /** @param {NS} ns */
 export async function main(ns) {
