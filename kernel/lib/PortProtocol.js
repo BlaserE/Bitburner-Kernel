@@ -1,36 +1,28 @@
 /**
  * /etc/ports.ts
  */
-export const DataType = {
-    EXEC: "EXEC", // for single scripts, regardless of threads (eg, ns.share)
-    BATCH_EXEC: "BATCH_EXEC", // for multiple scripts in one request, each with their own thread count. (eg, HGHW)
-    KILL: "KILL", // kills a process by PID
-    BATCH_KILL: "BATCH_KILL", // kills multiple PIDs in one request
-    QUERY: "QUERY", // for querying the kernel for information. Specify a "queryType" in the data field to specify what info you want
-    BATCH_QUERY: "BATCH_QUERY", // for querying the kernel for multiple pieces of information in one request. Data field should contain an array of queryTypes.
-    PING: "PING",
-    HANDSHAKE: "HANDSHAKE",
-    BATCH_PING: "BATCH_PING", // for checking if the kernel is responsive. Data field can specify how many pings to send in one request.
-    SUCCESS: "SUCCESS", // response to a request, indicating it was successful. Data field can be used for the response body.
-    ERROR: "ERROR" // response to a request, indicating it failed. Data field can be used for the error message.
-};
+// Bus Architecture
 export var BusChannels;
 (function (BusChannels) {
+    // === RING 0: HARDWARE INTERRUPTS ===
+    // Preempts the normal tick loop. Handled immediately.
     BusChannels[BusChannels["CRITICAL"] = 1] = "CRITICAL";
-    BusChannels[BusChannels["RESOURCE"] = 2] = "RESOURCE";
-    BusChannels[BusChannels["HANDSHAKE"] = 3] = "HANDSHAKE";
-    BusChannels[BusChannels["EXEC"] = 4] = "EXEC";
-    BusChannels[BusChannels["QUERY"] = 5] = "QUERY";
+    // === RING 1: STATE RECONCILIATION (Garbage Collection) ===
+    // Must process BEFORE new allocations so we have absolute maximum RAM available.
+    BusChannels[BusChannels["REGISTER"] = 2] = "REGISTER";
+    // === RING 2: PENDING STATE RESOLUTION ===
+    // Finalizes "Ghost RAM". When the Kernel EXECs, it temporarily reserves RAM.
+    // This bus confirms the script actually booted.
+    BusChannels[BusChannels["HANDSHAKE"] = 4] = "HANDSHAKE";
+    // === RING 3: ALLOCATION & MUTATION ===
+    // Safe to process now because Ring 1 and 2 guarantee the RAM Ledger is 100% accurate.
+    BusChannels[BusChannels["DISPATCH"] = 5] = "DISPATCH";
+    // === RING 4: READ-ONLY & LOW PRIORITY ===
+    // Processed last so that queries get the post-reconciliation, post-allocation truth.
+    BusChannels[BusChannels["QUERY"] = 6] = "QUERY";
     BusChannels[BusChannels["DEFAULT"] = 20] = "DEFAULT";
 })(BusChannels || (BusChannels = {}));
 export class PortManager {
-    // Bus Architecture
-    static BUS_CRITICAL = 1;
-    static BUS_MUTATE = 2;
-    static BUS_EXEC = 3;
-    static BUS_QUERY = 4;
-    static BUS_HANDSHAKE = 15;
-    static BUS_DEFAULT = 20;
     static OFFSET = 1000;
     /**
      * Returns the private channel that the kernel uses to communicate with the process.
@@ -57,16 +49,16 @@ export class PortManager {
     /**
      * Packs data into a JSON string with strict type enforcement.
      * @param {number} pid
-     * @param {any} type
-     * @param {any} data
+     * @param {IPacket} packet
+     * @return {string} Returns a string that can written to the ports.
      */
-    static pack(pid, type, data) {
-        return JSON.stringify({
+    static pack(pid, packet) {
+        const request = {
             origin: pid,
-            channel: PortManager.getChannel(pid),
-            type: BusChannels,
-            data: data,
-            sentAt: Date.now()
-        });
+            channel: this.getChannel(pid),
+            payload: packet,
+            sentAt: Date.now(),
+        };
+        return JSON.stringify(request);
     }
 }

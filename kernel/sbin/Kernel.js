@@ -32,7 +32,11 @@ Kernel Boot Options:
         return;
     }
     const kernel = new Kernel(ns, args);
-    await kernel.run();
+    let exitLoop = false;
+    while (!exitLoop) {
+        exitLoop = await kernel.tick();
+        await ns.sleep(1);
+    }
     // the kernel exits the run loop.
     kernel.shutdown();
 }
@@ -57,12 +61,13 @@ class Kernel {
         this.config = flags;
         // creates the ledger
         this.processDB = new RAMLedger(this.config);
+        this.boot();
         this.lastGC = Date.now(); // should be the last thing called in the constructor
     }
     /**
      * The thing that actually does begin kernel operations.
      */
-    async run() {
+    boot() {
         this.ns.disableLog("ALL");
         this.ns.tprint("KERNEL: Booting...");
         const KernelServer = CreateServerObject(this.ns, this.ns.getHostname());
@@ -70,49 +75,38 @@ class Kernel {
         const KernelProcess = CreateProcessObject(this.ns.pid, "/sbin/Kernel.js", this.ns.getScriptRam("/sbin/Kernel.js"), this.ns.getHostname());
         this.processDB.registerProcess(KernelProcess);
         this.ns.tprint("KERNEL: RAMLedger initialized.");
-        while (true) {
-            await this.listen();
-            // Gargage collection
-            if (Date.now() - this.lastGC > this.config.gcInterval) {
-                this.ns.print("Running Garbage Collection...");
-                await this.runGarbageCollection();
-                this.lastGC = Date.now();
-            }
-            await this.ns.sleep(20); // The "Heartbeat"
-        }
+        // while (true) {
+        //     // TODO: add terminal-based kernel interrupt
+        //     // Gargage collection
+        //     if (Date.now() - this.lastGC > this.config.gcInterval) {
+        //         this.ns.print("Running Garbage Collection...");
+        //
+        //         await this.runGarbageCollection();
+        //         this.lastGC = Date.now();
+        //     }
+        //
+        //     await this.ns.sleep(1); // needs to sleep in order to pass actual game time
+        // }
     }
     async runGarbageCollection() {
     }
-    /**
-     * The method that parses every port.
-     */
-    async listen() {
-        let requests = 0;
+    async tick() {
+        let exitLoop = false;
         for (let port = 1; port <= 20; port++) {
-            let raw;
-            while ((raw = this.ns.readPort(port)) !== "NULL PORT DATA") {
-                const request = PortManager.unpack(raw);
-                if (request) {
-                    this.ns.print(`INBOUND: [${request.type}] from PID ${request.origin}`);
-                    await this.handleRequest(request);
-                    requests++;
-                }
-            }
+            this.drainBus(port);
+        }
+        // leaves if needed
+        return exitLoop;
+    }
+    drainBus(bus) {
+        this.ns.print(`Draining bus ${bus}...`);
+        while (this.ns.peek(bus) !== 'NULL PORT DATA') {
+            const data = this.unpackFromPort(bus);
+            this.ns.tprint(data);
         }
     }
-    /**
-     * Singular method to handle individual requests.
-     */
-    async handleRequest(request) {
-    }
-    handleExec(request) {
-    }
-    handleQuery(request) {
-    }
-    sendReply(targetPid, type, data) {
-        const channel = PortManager.getChannel(targetPid);
-        const msg = PortManager.pack(this.ns.pid, type, data);
-        this.ns.writePort(channel, msg);
+    unpackFromPort(port) {
+        return PortManager.unpack(this.ns.readPort(port));
     }
     /**
      * Exits the script
