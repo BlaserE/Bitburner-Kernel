@@ -88,6 +88,8 @@ class Kernel {
         // creates the ledger
         this.processDB = new RAMLedger(this.config);
 
+        this.boot()
+
         this.lastGC = Date.now(); // should be the last thing called in the constructor
     }
 
@@ -95,7 +97,7 @@ class Kernel {
     /**
      * The thing that actually does begin kernel operations.
      */
-    async boot(): Promise<void> {
+    boot(): void {
         this.ns.disableLog("ALL");
         this.ns.tprint("KERNEL: Booting...");
 
@@ -111,20 +113,20 @@ class Kernel {
 
         this.ns.tprint("KERNEL: RAMLedger initialized.");
 
-        while (true) {
-            // TODO: add terminal-based kernel interrupt
+        // while (true) {
+        //     // TODO: add terminal-based kernel interrupt
 
 
-            // Gargage collection
-            if (Date.now() - this.lastGC > this.config.gcInterval) {
-                this.ns.print("Running Garbage Collection...");
-
-                await this.runGarbageCollection();
-                this.lastGC = Date.now();
-            }
-
-            await this.ns.sleep(1); // needs to sleep in order to pass actual game time
-        }
+        //     // Gargage collection
+        //     if (Date.now() - this.lastGC > this.config.gcInterval) {
+        //         this.ns.print("Running Garbage Collection...");
+        //
+        //         await this.runGarbageCollection();
+        //         this.lastGC = Date.now();
+        //     }
+        //
+        //     await this.ns.sleep(1); // needs to sleep in order to pass actual game time
+        // }
 
 
     }
