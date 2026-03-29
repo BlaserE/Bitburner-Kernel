@@ -15,6 +15,7 @@ export interface IProcess {
     script: string;
     ramCost: number; // equal to ram * thread
     hostname: string;
+    registered: boolean;
 }
 
 /**
@@ -36,10 +37,11 @@ export const CreateServerObject = (ns: any, hostname: string): IServer => {
  * @param script The absolute path to the script
  * @param ramCost The total RAM cost of the script, equal to threads * RAM cost.
  * @param hostname The name of the server the script is running on.
+ * @param registered If the process has performed a handshake with the kernel.
  * @constructor
  */
-export const CreateProcessObject = (pid: number, script: string, ramCost: number, hostname: string): IProcess => {
-    return { pid, script, ramCost, hostname };
+export const CreateProcessObject = (pid: number, script: string, ramCost: number, hostname: string, registered: boolean = false): IProcess => {
+    return { pid, script, ramCost, hostname, registered };
 };
 
 /**

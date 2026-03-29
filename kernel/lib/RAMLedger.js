@@ -17,10 +17,11 @@ export const CreateServerObject = (ns, hostname) => {
  * @param script The absolute path to the script
  * @param ramCost The total RAM cost of the script, equal to threads * RAM cost.
  * @param hostname The name of the server the script is running on.
+ * @param registered If the process has performed a handshake with the kernel.
  * @constructor
  */
-export const CreateProcessObject = (pid, script, ramCost, hostname) => {
-    return { pid, script, ramCost, hostname };
+export const CreateProcessObject = (pid, script, ramCost, hostname, registered = false) => {
+    return { pid, script, ramCost, hostname, registered };
 };
 /**
  * The RAMLedger is the class that the kernel uses to register processes across the rooted network.

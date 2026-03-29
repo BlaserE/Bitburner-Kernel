@@ -1,7 +1,7 @@
 import {NS, AutocompleteData} from "../../NetscriptDefinitions";
 import {RAMLedger, IProcess, IServer, CreateServerObject, CreateProcessObject} from "../lib/RAMLedger";
 import {KernelScript} from "../lib/KernelScript";
-import {IRequestPacket, PortManager} from "../lib/PortProtocol";
+import {BusChannels, DataType, IHandshake, IPacket, IRequestPacket, PortManager} from "../lib/PortProtocol";
 
 /**
  * Interface for the kernel flags. It uses camelCase because kebab-case is too cool for JS.
@@ -131,18 +131,19 @@ class Kernel {
 
     }
 
-    async runGarbageCollection(): Promise<void> {
-
-    }
-
 
     async tick () : Promise<boolean> {
         let exitLoop = false;
 
-        for (let port = 1; port <= 20; port++) {
+        this.drainBus(BusChannels.CRITICAL)
+        this.drainBus(BusChannels.REGISTER)
 
+        this.drainBus(BusChannels.HANDSHAKE)
+        this.drainBus(BusChannels.DISPATCH)
 
-            this.drainBus(port);
+        if (Date.now() - this.lastGC > this.config.gcInterval) {
+            this.runGarbageCollection();
+            this.lastGC = Date.now();
         }
 
         // leaves if needed
@@ -152,15 +153,47 @@ class Kernel {
     drainBus(bus: number) {
         this.ns.print(`Draining bus ${bus}...`)
         while (this.ns.peek(bus) !== 'NULL PORT DATA') {
-            const data = this.unpackFromPort(bus)
-            this.ns.tprint(data);
+            const request = this.unpackFromPort(bus)
+
+            // safety switch
+            if (!request || !request.payload) continue;
+
+            // payload router
+            switch (request.payload.type) {
+
+                case DataType.HANDSHAKE:
+                    this.performHandshake(request.origin)
+                    break;
+
+                case DataType.DISPATCH:
+                    this.ns.tprint(`[KERNEL] Dispatch requested...`)
+                    break;
+
+                default:
+                    break;
+            }
+
+            // this.ns.tprint(request);
         }
     }
 
-    unpackFromPort(port: number) : any {
-        return PortManager.unpack(this.ns.readPort(port));
+    unpackFromPort(port: number) : IRequestPacket {
+        return PortManager.unpack(this.ns.readPort(port)) as IRequestPacket;
     }
 
+    private performDispatch () {
+
+    }
+
+
+    performHandshake (destination: number) {
+        const handshake: IPacket = {
+            type: "HANDSHAKE",
+            data : { pid: 0 } // 0 because kernel is root
+        }
+        // adds offset
+        this.sendReply(destination, handshake);
+    }
 
 
     /**
@@ -168,6 +201,24 @@ class Kernel {
      */
     shutdown(): void {
         this.ns.exit()
+    }
+
+    sendReply(port:number, reply: IPacket) {
+        this.sendSignal(PortManager.getChannel(port), reply);
+    }
+
+    sendSignal(channel:number, request:IPacket) {
+        const requestString = PortManager.pack(0, request);
+
+        const success = this.ns.tryWritePort(channel, requestString);
+
+        if (!success) {
+            this.ns.tprint(`[Port Protocol] Failed to reach PID: ${channel}`);
+        }
+    }
+
+    runGarbageCollection(): void {
+        
     }
 
 }

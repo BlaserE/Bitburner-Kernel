@@ -1,33 +1,7 @@
 // 1. The Contract: Every script must be able to do these things
 import {NS} from "../../NetscriptDefinitions";
-import {PortManager, BusChannels, IPacket} from "./PortProtocol";
+import {PortManager, BusChannels, IPacket, IHandshake, DataType, IRequestPacket} from "./PortProtocol";
 //import {IKernelPacket, KernelSignal, SignalPayloadMap} from "./PortProtocol";
-
-
-
-const DataType = {
-    // CRITICAL BUS (Port 1)
-    TERMINATE: "TERMINATE",
-    SHUTDOWN: "SHUTDOWN",
-
-    // RESOURCE BUS (Port 2)
-    ADD_SERVER: "ADD_SERVER",     // New rooted server found
-    FREE_PROCESS: "FREE_PROCESS", // Script finished naturally
-    UPDATE_RAM: "UPDATE_RAM",     // Server RAM changed (e.g. purchased server upgrade)
-
-    // HANDSHAKE BUS (Port 4)
-    BOOT_SUCCESS: "BOOT_SUCCESS", // Script sucessfully booted
-    HANDSHAKE: "HANDSHAKE",
-
-    // DISPATCH BUS (Port 5)
-    DISPATCH: "DISPATCH",
-    BATCH_DISPATCH: "BATCH_DISPATCH",
-
-    // QUERY BUS (Port 6)
-    QUERY: "QUERY",
-    BATCH_QUERY: "BATCH_QUERY",
-
-}
 
 const RouteRecord : Record<string, BusChannels> = {
     // Critical
@@ -81,8 +55,9 @@ export abstract class KernelScript implements IKernelScript {
             data: { pid: this.ns.pid }
         }
 
-        await this.sendAndAwait(DataType.HANDSHAKE, handshake);
+        const data = await this.sendAndAwait(DataType.HANDSHAKE, handshake) as IRequestPacket;
 
+        this.ns.tprint(data)
     }
 
     // Abstract method: Forces the child script to define its own logic

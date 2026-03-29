@@ -1,5 +1,5 @@
 import { RAMLedger, CreateServerObject, CreateProcessObject } from "../lib/RAMLedger";
-import { PortManager } from "../lib/PortProtocol";
+import { BusChannels, DataType, PortManager } from "../lib/PortProtocol";
 /**
  * Flags schema for terminal autocomplete
  */
@@ -88,12 +88,15 @@ class Kernel {
         //     await this.ns.sleep(1); // needs to sleep in order to pass actual game time
         // }
     }
-    async runGarbageCollection() {
-    }
     async tick() {
         let exitLoop = false;
-        for (let port = 1; port <= 20; port++) {
-            this.drainBus(port);
+        this.drainBus(BusChannels.CRITICAL);
+        this.drainBus(BusChannels.REGISTER);
+        this.drainBus(BusChannels.HANDSHAKE);
+        this.drainBus(BusChannels.DISPATCH);
+        if (Date.now() - this.lastGC > this.config.gcInterval) {
+            this.runGarbageCollection();
+            this.lastGC = Date.now();
         }
         // leaves if needed
         return exitLoop;
@@ -101,17 +104,53 @@ class Kernel {
     drainBus(bus) {
         this.ns.print(`Draining bus ${bus}...`);
         while (this.ns.peek(bus) !== 'NULL PORT DATA') {
-            const data = this.unpackFromPort(bus);
-            this.ns.tprint(data);
+            const request = this.unpackFromPort(bus);
+            // safety switch
+            if (!request || !request.payload)
+                continue;
+            // payload router
+            switch (request.payload.type) {
+                case DataType.HANDSHAKE:
+                    this.performHandshake(request.origin);
+                    break;
+                case DataType.DISPATCH:
+                    this.ns.tprint(`[KERNEL] Dispatch requested...`);
+                    break;
+                default:
+                    break;
+            }
+            // this.ns.tprint(request);
         }
     }
     unpackFromPort(port) {
         return PortManager.unpack(this.ns.readPort(port));
+    }
+    performDispatch() {
+    }
+    performHandshake(destination) {
+        const handshake = {
+            type: "HANDSHAKE",
+            data: { pid: 0 } // 0 because kernel is root
+        };
+        // adds offset
+        this.sendReply(destination, handshake);
     }
     /**
      * Exits the script
      */
     shutdown() {
         this.ns.exit();
+    }
+    sendReply(port, reply) {
+        this.sendSignal(PortManager.getChannel(port), reply);
+    }
+    sendSignal(channel, request) {
+        const requestString = PortManager.pack(0, request);
+        const success = this.ns.tryWritePort(channel, requestString);
+        if (!success) {
+            this.ns.tprint(`[Port Protocol] Failed to reach PID: ${channel}`);
+        }
+    }
+    runGarbageCollection() {
     }
 }
