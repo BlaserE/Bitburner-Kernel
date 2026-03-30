@@ -1,9 +1,18 @@
 // 1. The Contract: Every script must be able to do these things
 import {NS} from "../../NetscriptDefinitions";
-import {PortManager, BusChannels, IPacket, IHandshake, DataType, IRequestPacket} from "./PortProtocol";
+import {
+    PortManager,
+    BusChannels,
+    IPacket,
+    IHandshake,
+    DataType,
+    IRequestPacket,
+    IProtocol,
+    IError
+} from "./PortProtocol";
 //import {IKernelPacket, KernelSignal, SignalPayloadMap} from "./PortProtocol";
 
-const RouteRecord : Record<string, BusChannels> = {
+const RouteRecord: Record<string, BusChannels> = {
     // Critical
     [DataType.TERMINATE]: BusChannels.CRITICAL,
     [DataType.SHUTDOWN]: BusChannels.CRITICAL,
@@ -14,16 +23,16 @@ const RouteRecord : Record<string, BusChannels> = {
     [DataType.UPDATE_RAM]: BusChannels.REGISTER,
 
     // Handshake
-    [DataType.HANDSHAKE] : BusChannels.HANDSHAKE,
-    [DataType.BOOT_SUCCESS] : BusChannels.HANDSHAKE,
+    [DataType.HANDSHAKE]: BusChannels.HANDSHAKE,
+    [DataType.BOOT_SUCCESS]: BusChannels.HANDSHAKE,
 
     // Dispatch
-    [DataType.DISPATCH] : BusChannels.DISPATCH,
-    [DataType.BATCH_DISPATCH] : BusChannels.DISPATCH,
+    [DataType.DISPATCH]: BusChannels.DISPATCH,
+    [DataType.BATCH_DISPATCH]: BusChannels.DISPATCH,
 
     // Query
-    [DataType.QUERY] : BusChannels.QUERY,
-    [DataType.BATCH_QUERY] : BusChannels.QUERY,
+    [DataType.QUERY]: BusChannels.QUERY,
+    [DataType.BATCH_QUERY]: BusChannels.QUERY,
 
 }
 
@@ -33,12 +42,12 @@ const RouteRecord : Record<string, BusChannels> = {
  */
 interface IKernelScript {
     register(): void;
-    //handleMessage(msg: any): void;
+
     shutdown(): void;
 }
 
 // 2. The Base Class: Implements the "Standard" behavior
-export abstract class KernelScript implements IKernelScript {
+export abstract class KernelScript implements IKernelScript, IProtocol {
     protected ns: NS;
     protected PrivateChannel: number;
     protected NULL_PORT = "NULL PORT DATA";
@@ -52,23 +61,29 @@ export abstract class KernelScript implements IKernelScript {
     public async register(): Promise<void> {
         const handshake: IPacket = {
             type: "HANDSHAKE",
-            data: { pid: this.ns.pid }
+            data: {pid: this.ns.pid}
         }
 
         const data = await this.sendAndAwait(DataType.HANDSHAKE, handshake) as IRequestPacket;
 
-        this.ns.tprint(`Received handshake from kernel : ${data}`)
+        this.ns.print(`[KernelScript] Received handshake from Kernel : ${data}`)
     }
 
-    // Abstract method: Forces the child script to define its own logic
+    /**
+     * Abstract method that MUST be defined by children of the KernelScript class
+     * @return {Promise<void>} `Promise<void>` because it is async
+     */
     abstract run(): Promise<void>;
 
+    /**
+     *
+     */
     public shutdown(): void {
         const process: IPacket = {
             type: "FREE_PROCESS",
-            data: { pid: this.ns.pid}
+            data: {pid: this.ns.pid}
         }
-        this.sendSignal(DataType.FREE_PROCESS, process);
+        this.sendRequest(DataType.FREE_PROCESS, process);
         this.ns.exit();
     }
 
@@ -78,7 +93,35 @@ export abstract class KernelScript implements IKernelScript {
      * @param payload
      * @protected
      */
-    protected sendSignal(type: string, payload: IPacket): boolean {
+    protected sendRequest(type: string, payload: IPacket): boolean {
+        return this.sendSignal(type, payload);
+    }
+
+    protected async sendAndAwait(type: string, payload: IPacket): Promise<any> {
+        // flush port cache
+        while (this.ns.peek(this.PrivateChannel) !== this.NULL_PORT) {
+            this.ns.readPort(this.PrivateChannel);
+        }
+
+        const success = this.sendRequest(type, payload);
+        if (!success) return;
+
+        // waits for an answer
+        await this.ns.nextPortWrite(this.PrivateChannel)
+
+        return this.readPrivatePort();
+    }
+
+    /**
+     * KernelScript-specific method for reading private ports.
+     * It is mostly meant to be used by calling sendAndAwait
+     * @protected
+     */
+    protected readPrivatePort(): IRequestPacket {
+        return this.readPort(this.PrivateChannel) as IRequestPacket;
+    }
+
+    public sendSignal(type: string, payload: IPacket): boolean {
         const bus = RouteRecord[type];
 
         if (bus == undefined) {
@@ -95,22 +138,21 @@ export abstract class KernelScript implements IKernelScript {
         return success;
     }
 
-    protected async sendAndAwait(type: string, payload: IPacket): Promise<any> {
-        // flush port cache
-        while (this.ns.peek(this.PrivateChannel) !== this.NULL_PORT) {
-            this.ns.readPort(this.PrivateChannel);
+    /**
+     * IProtocol implementation of readPort.
+     * It verifies if the calling script owns the port being read (PID + 1000)
+     * Afterward, it verifies if the port is empty.
+     * @param port
+     * @return {IRequestPacket | null} Port's content
+     */
+    public readPort(port: number): IRequestPacket | null {
+        if (port !== this.PrivateChannel) {
+            this.ns.print(`ERROR: Unauthorized port read attempt on port ${port}`);
+            return null;
         }
+        const rawData = this.ns.readPort(port);
+        if (rawData == this.NULL_PORT) return null;
 
-        const success = this.sendSignal(type, payload);
-        if (!success) return;
-
-        // waits for an answer
-        await this.ns.nextPortWrite(this.PrivateChannel)
-
-        return this.readPrivatePort();
-    }
-
-    protected readPrivatePort(): any {
-        return PortManager.unpack(this.ns.readPort(this.PrivateChannel));
+        return PortManager.unpack(rawData);
     }
 }

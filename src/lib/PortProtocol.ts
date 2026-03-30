@@ -25,6 +25,10 @@ export interface IHandshake {
     pid: number;
 }
 
+export interface IError {
+
+}
+
 /**
  * The type of request
  */
@@ -34,7 +38,8 @@ export type IPacket =
     | { type: "QUERY"; data: IQueryData }
     | { type: "PING"; data: { msg: string } }
     | { type: "FREE_PROCESS", data: IFreeProcess }
-    | { type: "HANDSHAKE", data: IHandshake };
+    | { type: "HANDSHAKE", data: IHandshake }
+    | { type: "ERROR"};
 
 /**
  * The actual payload being sent. This is what goes in the ports as requests
@@ -136,4 +141,12 @@ export class PortManager {
         }
         return JSON.stringify(request);
     }
+}
+
+/**
+ * Interface required by scripts that need to implement the PortProtocol.
+ */
+export interface IProtocol {
+    sendSignal(type:string | number, payload: IPacket): boolean;
+    readPort(port:number):IRequestPacket | null;
 }

@@ -34,14 +34,17 @@ export class KernelScript {
             data: { pid: this.ns.pid }
         };
         const data = await this.sendAndAwait(DataType.HANDSHAKE, handshake);
-        this.ns.tprint(`Received handshake from kernel : ${data}`);
+        this.ns.print(`[KernelScript] Received handshake from Kernel : ${data}`);
     }
+    /**
+     *
+     */
     shutdown() {
         const process = {
             type: "FREE_PROCESS",
             data: { pid: this.ns.pid }
         };
-        this.sendSignal(DataType.FREE_PROCESS, process);
+        this.sendRequest(DataType.FREE_PROCESS, process);
         this.ns.exit();
     }
     /**
@@ -50,6 +53,29 @@ export class KernelScript {
      * @param payload
      * @protected
      */
+    sendRequest(type, payload) {
+        return this.sendSignal(type, payload);
+    }
+    async sendAndAwait(type, payload) {
+        // flush port cache
+        while (this.ns.peek(this.PrivateChannel) !== this.NULL_PORT) {
+            this.ns.readPort(this.PrivateChannel);
+        }
+        const success = this.sendRequest(type, payload);
+        if (!success)
+            return;
+        // waits for an answer
+        await this.ns.nextPortWrite(this.PrivateChannel);
+        return this.readPrivatePort();
+    }
+    /**
+     * KernelScript-specific method for reading private ports.
+     * It is mostly meant to be used by calling sendAndAwait
+     * @protected
+     */
+    readPrivatePort() {
+        return this.readPort(this.PrivateChannel);
+    }
     sendSignal(type, payload) {
         const bus = RouteRecord[type];
         if (bus == undefined) {
@@ -63,19 +89,21 @@ export class KernelScript {
         }
         return success;
     }
-    async sendAndAwait(type, payload) {
-        // flush port cache
-        while (this.ns.peek(this.PrivateChannel) !== this.NULL_PORT) {
-            this.ns.readPort(this.PrivateChannel);
+    /**
+     * IProtocol implementation of readPort.
+     * It verifies if the calling script owns the port being read (PID + 1000)
+     * Afterward, it verifies if the port is empty.
+     * @param port
+     * @return {IRequestPacket | null} Port's content
+     */
+    readPort(port) {
+        if (port !== this.PrivateChannel) {
+            this.ns.print(`ERROR: Unauthorized port read attempt on port ${port}`);
+            return null;
         }
-        const success = this.sendSignal(type, payload);
-        if (!success)
-            return;
-        // waits for an answer
-        await this.ns.nextPortWrite(this.PrivateChannel);
-        return this.readPrivatePort();
-    }
-    readPrivatePort() {
-        return PortManager.unpack(this.ns.readPort(this.PrivateChannel));
+        const rawData = this.ns.readPort(port);
+        if (rawData == this.NULL_PORT)
+            return null;
+        return PortManager.unpack(rawData);
     }
 }

@@ -1,5 +1,6 @@
 import {NS} from "../../NetscriptDefinitions";
 import {KernelScript} from "../lib/KernelScript";
+import {IPacket} from "../lib/PortProtocol";
 
 export async function main(ns: NS) {
     const basicHack = new BasicHack(ns);
@@ -19,6 +20,5 @@ class BasicHack extends KernelScript {
 
         return Promise.resolve(undefined);
     }
-
 
 }

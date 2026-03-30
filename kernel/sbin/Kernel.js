@@ -122,15 +122,12 @@ class Kernel {
             // this.ns.tprint(request);
         }
     }
-    unpackFromPort(port) {
-        return PortManager.unpack(this.ns.readPort(port));
-    }
     performDispatch() {
     }
     performHandshake(destination) {
         const handshake = {
             type: "HANDSHAKE",
-            data: { pid: this.ns.pid } // 0 because kernel is root
+            data: { pid: this.ns.pid } // because kernel is root
         };
         // adds offset
         this.sendReply(destination, handshake);
@@ -144,12 +141,27 @@ class Kernel {
     sendReply(port, reply) {
         this.sendSignal(PortManager.getChannel(port), reply);
     }
-    sendSignal(channel, request) {
+    sendSignal(port, request) {
         const requestString = PortManager.pack(this.ns.pid, request);
-        const success = this.ns.tryWritePort(channel, requestString);
+        // if (typeof port === "string") return false;
+        const success = this.ns.tryWritePort(port, requestString);
         if (!success) {
-            this.ns.tprint(`[Port Protocol] Failed to reach PID: ${channel}`);
+            this.ns.tprint(`[Port Protocol] Failed to reach PID: ${port}`);
         }
+        return success;
+    }
+    /**
+     *
+     * @param port
+     */
+    readPort(port) {
+        const rawData = this.ns.readPort(port);
+        if (rawData == "NULL PORT DATA")
+            return null;
+        return PortManager.unpack(rawData);
+    }
+    unpackFromPort(port) {
+        return this.readPort(port);
     }
     runGarbageCollection() {
         for (const [hostname, server] of this.processDB.getAllServers()) {

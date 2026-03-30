@@ -1,7 +1,7 @@
 import {NS, AutocompleteData} from "../../NetscriptDefinitions";
 import {RAMLedger, IProcess, IServer, CreateServerObject, CreateProcessObject} from "../lib/RAMLedger";
 import {KernelScript} from "../lib/KernelScript";
-import {BusChannels, DataType, IHandshake, IPacket, IRequestPacket, PortManager} from "../lib/PortProtocol";
+import {BusChannels, DataType, IHandshake, IPacket, IProtocol, IRequestPacket, PortManager} from "../lib/PortProtocol";
 
 /**
  * Interface for the kernel flags. It uses camelCase because kebab-case is too cool for JS.
@@ -54,7 +54,7 @@ Kernel Boot Options:
 
     let exitLoop = false;
     while (!exitLoop) {
-        exitLoop= await kernel.tick();
+        exitLoop = await kernel.tick();
         await ns.sleep(1);
     }
 
@@ -69,7 +69,7 @@ Kernel Boot Options:
  * It is intended to be the only script able to do `ns.exec`. It could potentially be configured to automatically kill any scripts that
  * it hasn't executed itself.
  */
-class Kernel {
+class Kernel implements IProtocol {
     private ns: NS
     private processDB: RAMLedger;
     private readonly config: IFlags;
@@ -97,7 +97,7 @@ class Kernel {
     /**
      * The thing that actually does begin kernel operations.
      */
-    boot(): void {
+    public boot(): void {
         this.ns.disableLog("ALL");
         this.ns.tprint("KERNEL: Booting...");
 
@@ -132,7 +132,7 @@ class Kernel {
     }
 
 
-    async tick () : Promise<boolean> {
+    public async tick(): Promise<boolean> {
         let exitLoop = false;
 
         this.drainBus(BusChannels.CRITICAL)
@@ -150,7 +150,7 @@ class Kernel {
         return exitLoop;
     }
 
-    drainBus(bus: number) {
+    private drainBus(bus: number) {
         this.ns.print(`Draining bus ${bus}...`)
         while (this.ns.peek(bus) !== 'NULL PORT DATA') {
             const request = this.unpackFromPort(bus)
@@ -177,19 +177,16 @@ class Kernel {
         }
     }
 
-    unpackFromPort(port: number) : IRequestPacket {
-        return PortManager.unpack(this.ns.readPort(port)) as IRequestPacket;
-    }
 
-    private performDispatch () {
+    private performDispatch() {
 
     }
 
 
-    performHandshake (destination: number) {
+    private performHandshake(destination: number) {
         const handshake: IPacket = {
             type: "HANDSHAKE",
-            data : { pid: this.ns.pid } // 0 because kernel is root
+            data: {pid: this.ns.pid} // because kernel is root
         }
         // adds offset
         this.sendReply(destination, handshake);
@@ -199,25 +196,43 @@ class Kernel {
     /**
      * Exits the script
      */
-    shutdown(): void {
+    public shutdown(): void {
         this.ns.exit()
     }
 
-    sendReply(port:number, reply: IPacket) {
+    private sendReply(port: number, reply: IPacket) {
         this.sendSignal(PortManager.getChannel(port), reply);
     }
 
-    sendSignal(channel:number, request:IPacket) {
+    public sendSignal(port: number, request: IPacket): boolean {
         const requestString = PortManager.pack(this.ns.pid, request);
 
-        const success = this.ns.tryWritePort(channel, requestString);
+        // if (typeof port === "string") return false;
+
+        const success = this.ns.tryWritePort(port, requestString);
 
         if (!success) {
-            this.ns.tprint(`[Port Protocol] Failed to reach PID: ${channel}`);
+            this.ns.tprint(`[Port Protocol] Failed to reach PID: ${port}`);
         }
+        return success;
     }
 
-    runGarbageCollection(): void {
+    /**
+     *
+     * @param port
+     */
+    public readPort(port: number): IRequestPacket | null {
+        const rawData = this.ns.readPort(port);
+        if (rawData == "NULL PORT DATA") return null;
+
+        return PortManager.unpack(rawData);
+    }
+
+    private unpackFromPort(port: number): IRequestPacket | null{
+        return this.readPort(port);
+    }
+
+    private runGarbageCollection(): void {
         for (const [hostname, server] of this.processDB.getAllServers()) {
 
             const actualPids = this.ns.ps(hostname).map(p => p.pid);
