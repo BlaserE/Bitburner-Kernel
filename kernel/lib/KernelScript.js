@@ -34,7 +34,7 @@ export class KernelScript {
             data: { pid: this.ns.pid }
         };
         const data = await this.sendAndAwait(DataType.HANDSHAKE, handshake);
-        this.ns.tprint(data);
+        this.ns.tprint(`Received handshake from kernel : ${data}`);
     }
     shutdown() {
         const process = {
