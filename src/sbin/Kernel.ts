@@ -135,6 +135,8 @@ class Kernel implements IProtocol {
     public async tick(): Promise<boolean> {
         let exitLoop = false;
 
+        this.ns.print(`[KERNEL] Running internal tick...`)
+
         this.drainBus(BusChannels.CRITICAL)
         this.drainBus(BusChannels.REGISTER)
 
@@ -151,7 +153,8 @@ class Kernel implements IProtocol {
     }
 
     private drainBus(bus: number) {
-        this.ns.print(`Draining bus ${bus}...`)
+        let requests : number = 0;
+       // this.ns.print(`Draining bus ${bus}...`)
         while (this.ns.peek(bus) !== 'NULL PORT DATA') {
             const request = this.unpackFromPort(bus)
 
@@ -172,9 +175,10 @@ class Kernel implements IProtocol {
                 default:
                     break;
             }
-
+            requests++;
             // this.ns.tprint(request);
         }
+        this.ns.print(`[KERNEL] Drained bus ${bus} of ${requests} requests.`);
     }
 
 
