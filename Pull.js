@@ -53,7 +53,7 @@ async function CheckVersion(ns, CREDS) {
 
     // Parse the JSON to get the version string
     const raw = ns.read("/tmp/package.json")
-    ns.tprint(`Raw file : ${raw}`)
+    // ns.tprint(`Raw file : ${raw}`) // debug print
     const pkg = JSON.parse(raw);
     const remoteVersion = pkg.version;
 
