@@ -52,7 +52,9 @@ async function CheckVersion(ns, CREDS) {
     await ns.wget(url, "/tmp/package.json");
 
     // Parse the JSON to get the version string
-    const pkg = JSON.parse(ns.read("/tmp/package.json"));
+    const raw = ns.read("/tmp/package.json")
+    ns.tprint(`Raw file : ${raw}`)
+    const pkg = JSON.parse(raw);
     const remoteVersion = pkg.version;
 
     // Look for your existing local version.txt

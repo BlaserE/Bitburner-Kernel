@@ -156,29 +156,35 @@ class Kernel implements IProtocol {
         let requests : number = 0;
        // this.ns.print(`Draining bus ${bus}...`)
         while (this.ns.peek(bus) !== 'NULL PORT DATA') {
-            const request = this.unpackFromPort(bus)
+            const request = this.unpackFromPort(bus);
 
             // safety switch
             if (!request || !request.payload) continue;
 
-            // payload router
-            switch (request.payload.type) {
 
-                case DataType.HANDSHAKE:
-                    this.performHandshake(request.origin)
-                    break;
+            this.resolveRequest(request);
 
-                case DataType.DISPATCH:
-                    this.ns.tprint(`[KERNEL] Dispatch requested...`)
-                    break;
-
-                default:
-                    break;
-            }
             requests++;
             // this.ns.tprint(request);
         }
         this.ns.print(`[KERNEL] Drained bus ${bus} of ${requests} requests.`);
+    }
+
+    private resolveRequest (request : IRequestPacket): void {
+        // payload router
+        switch (request.payload.type) {
+
+            case DataType.HANDSHAKE:
+                this.performHandshake(request.origin)
+                break;
+
+            case DataType.DISPATCH:
+                this.ns.tprint(`[KERNEL] Dispatch requested...`)
+                break;
+
+            default:
+                break;
+        }
     }
 
 
