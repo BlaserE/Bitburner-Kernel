@@ -5,6 +5,7 @@ export const DataType = {
     // CRITICAL BUS (Port 1)
     TERMINATE: "TERMINATE",
     SHUTDOWN: "SHUTDOWN",
+    TERMINAL: "TERMINAL", // for CLI operations
     // RESOURCE BUS (Port 2)
     ADD_SERVER: "ADD_SERVER", // New rooted server found
     FREE_PROCESS: "FREE_PROCESS", // Script finished naturally

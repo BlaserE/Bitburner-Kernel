@@ -2,11 +2,24 @@
  * /etc/ports.ts
  */
 
-export interface IExecData {
+/**
+ * The interface for when a script sends a packet asking the kernel to execute a script.
+ */
+export interface IDispatchRequest {
     script: string;
-    host: string;
+    host: string | undefined; // specifies if the executed script needs a specific host, mostly for coding contracts if this is necessary. Might be phased out
     threads: number;
     args: (string | number | boolean)[];
+}
+
+/**
+ * The interface for the kernel to reply to the script asking it to execute a script.
+ * It specifies if it was successful and the PID as well as the host.
+ */
+export interface IDispatchReply {
+    success: boolean;
+    pid: number; // returns 0 if failed
+    host: string; // empty if failed.
 }
 
 export interface IKillData {
@@ -33,13 +46,14 @@ export interface IError {
  * The type of request
  */
 export type IPacket =
-    | { type: "EXEC"; data: IExecData }
+    | { type: "DISPATCH"; data: IDispatchRequest }
     | { type: "KILL"; data: IKillData }
     | { type: "QUERY"; data: IQueryData }
     | { type: "PING"; data: { msg: string } }
     | { type: "FREE_PROCESS", data: IFreeProcess }
     | { type: "HANDSHAKE", data: IHandshake }
-    | { type: "ERROR"};
+    | { type: "ERROR"}
+    | { type: "DISPATCH_REPLY", data: IDispatchReply };
 
 /**
  * The actual payload being sent. This is what goes in the ports as requests
@@ -55,6 +69,7 @@ export const DataType = {
     // CRITICAL BUS (Port 1)
     TERMINATE: "TERMINATE",
     SHUTDOWN: "SHUTDOWN",
+    TERMINAL: "TERMINAL", // for CLI operations
 
     // RESOURCE BUS (Port 2)
     ADD_SERVER: "ADD_SERVER",     // New rooted server found
@@ -72,6 +87,10 @@ export const DataType = {
     // QUERY BUS (Port 6)
     QUERY: "QUERY",
     BATCH_QUERY: "BATCH_QUERY",
+
+
+    // Outbound types, those that the Kernel only sends out
+    ERROR: "ERROR",
 
 }
 

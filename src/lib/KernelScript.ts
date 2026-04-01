@@ -46,15 +46,23 @@ interface IKernelScript {
     shutdown(): void;
 }
 
-// 2. The Base Class: Implements the "Standard" behavior
+/**
+ * KernelScript is the basic class that all scripts that are to be run in the Kernel-framework
+ * HAVE to inherit from.
+ */
 export abstract class KernelScript implements IKernelScript, IProtocol {
     protected ns: NS;
     protected PrivateChannel: number;
     protected NULL_PORT = "NULL PORT DATA";
+    protected args: any;
 
-    constructor(ns: NS) {
+    constructor(ns: NS, args?:any) {
         this.ns = ns;
         this.PrivateChannel = PortManager.getChannel(this.ns.pid);
+
+        if (args != null) {
+            this.args = args;
+        }
     }
 
     // Default implementation: Can be overridden if needed
@@ -65,6 +73,8 @@ export abstract class KernelScript implements IKernelScript, IProtocol {
         }
 
         const data = await this.sendAndAwait(DataType.HANDSHAKE, handshake) as IRequestPacket;
+
+
 
         this.ns.print(`[KernelScript] Received handshake from Kernel : ${data}`)
     }
@@ -100,12 +110,15 @@ export abstract class KernelScript implements IKernelScript, IProtocol {
     protected async sendAndAwait(type: string, payload: IPacket): Promise<any> {
         // flush port cache
         while (this.ns.peek(this.PrivateChannel) !== this.NULL_PORT) {
-            this.ns.readPort(this.PrivateChannel);
+            const message = this.readPrivatePort();
+
+            if (message.payload.type)
         }
 
         const success = this.sendRequest(type, payload);
-        if (!success) return;
-
+        if (!success) {
+            return { type: DataType.ERROR, data: { message: "BUS_FULL" } };
+        }
         // waits for an answer
         await this.ns.nextPortWrite(this.PrivateChannel)
 

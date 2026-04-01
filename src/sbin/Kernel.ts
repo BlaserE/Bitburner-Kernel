@@ -182,6 +182,10 @@ class Kernel implements IProtocol {
                 this.ns.tprint(`[KERNEL] Dispatch requested...`)
                 break;
 
+
+            case DataType.TERMINAL:
+                this.ns.tprint(`[KERNEL] Terminal command received...`)
+
             default:
                 break;
         }

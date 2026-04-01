@@ -18,14 +18,21 @@ const RouteRecord = {
     [DataType.QUERY]: BusChannels.QUERY,
     [DataType.BATCH_QUERY]: BusChannels.QUERY,
 };
-// 2. The Base Class: Implements the "Standard" behavior
+/**
+ * KernelScript is the basic class that all scripts that are to be run in the Kernel-framework
+ * HAVE to inherit from.
+ */
 export class KernelScript {
     ns;
     PrivateChannel;
     NULL_PORT = "NULL PORT DATA";
-    constructor(ns) {
+    args;
+    constructor(ns, args) {
         this.ns = ns;
         this.PrivateChannel = PortManager.getChannel(this.ns.pid);
+        if (args != null) {
+            this.args = args;
+        }
     }
     // Default implementation: Can be overridden if needed
     async register() {

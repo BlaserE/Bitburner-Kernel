@@ -86,6 +86,15 @@ export class RAMLedger {
         }
         this.pidToHost.delete(pid);
     }
+    /**
+     * A public method that receives the list of running processes running on
+     * the provided hostname.
+     * It returns the 'diff', meaning the processes that are now dead and updates the ledger accordingly
+     * as well as the rogue processes, that are currently running but not registered in the ledger.
+     * @param {string} hostname The name of the host being reconciled.
+     * @param actualPids The list of actually running processes.
+     * @return {IReconcileResult} The 'diff' of the processes compared against the ledger.
+     */
     reconcile(hostname, actualPids) {
         const server = this.servers.get(hostname);
         const result = { dead: [], rogue: [] };

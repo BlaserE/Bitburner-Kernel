@@ -90,6 +90,7 @@ class Kernel {
     }
     async tick() {
         let exitLoop = false;
+        this.ns.print(`[KERNEL] Running internal tick...`);
         this.drainBus(BusChannels.CRITICAL);
         this.drainBus(BusChannels.REGISTER);
         this.drainBus(BusChannels.HANDSHAKE);
@@ -102,24 +103,32 @@ class Kernel {
         return exitLoop;
     }
     drainBus(bus) {
-        this.ns.print(`Draining bus ${bus}...`);
+        let requests = 0;
+        // this.ns.print(`Draining bus ${bus}...`)
         while (this.ns.peek(bus) !== 'NULL PORT DATA') {
             const request = this.unpackFromPort(bus);
             // safety switch
             if (!request || !request.payload)
                 continue;
-            // payload router
-            switch (request.payload.type) {
-                case DataType.HANDSHAKE:
-                    this.performHandshake(request.origin);
-                    break;
-                case DataType.DISPATCH:
-                    this.ns.tprint(`[KERNEL] Dispatch requested...`);
-                    break;
-                default:
-                    break;
-            }
+            this.resolveRequest(request);
+            requests++;
             // this.ns.tprint(request);
+        }
+        this.ns.print(`[KERNEL] Drained bus ${bus} of ${requests} requests.`);
+    }
+    resolveRequest(request) {
+        // payload router
+        switch (request.payload.type) {
+            case DataType.HANDSHAKE:
+                this.performHandshake(request.origin);
+                break;
+            case DataType.DISPATCH:
+                this.ns.tprint(`[KERNEL] Dispatch requested...`);
+                break;
+            case DataType.TERMINAL:
+                this.ns.tprint(`[KERNEL] Terminal command received...`);
+            default:
+                break;
         }
     }
     performDispatch() {
