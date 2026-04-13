@@ -2,11 +2,12 @@
   "name": "bitburner-kernel",
   "version": "1.0.1",
   "description": "A centralized management foundation for Bitburner scripts, emulating a Linux-style root filesystem.",
+  "main": "/kernel/sbin/Kernel.js",
   "type": "module",
   "scripts": {
     "build": "npm run clean && tsc",
     "watch": "tsc -w",
-    "clean": "rimraf src/kernel",
+    "clean": "rimraf kernel",
     "lint": "tsc --noEmit"
   },
   "repository": {
