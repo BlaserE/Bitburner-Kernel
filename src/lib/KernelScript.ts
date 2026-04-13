@@ -1,5 +1,4 @@
 // 1. The Contract: Every script must be able to do these things
-import {NS} from "../../NetscriptDefinitions";
 import {
     PortManager,
     BusChannels,
@@ -10,6 +9,7 @@ import {
     IProtocol,
     IError
 } from "./PortProtocol";
+import {NS} from "@ns";
 //import {IKernelPacket, KernelSignal, SignalPayloadMap} from "./PortProtocol";
 
 const RouteRecord: Record<string, BusChannels> = {
@@ -112,7 +112,7 @@ export abstract class KernelScript implements IKernelScript, IProtocol {
         while (this.ns.peek(this.PrivateChannel) !== this.NULL_PORT) {
             const message = this.readPrivatePort();
 
-            if (message.payload.type)
+            // if (message.payload.type)
         }
 
         const success = this.sendRequest(type, payload);

@@ -2,12 +2,11 @@
   "name": "bitburner-kernel",
   "version": "1.0.1",
   "description": "A centralized management foundation for Bitburner scripts, emulating a Linux-style root filesystem.",
-  "main": "kernel/sbin/init.js",
   "type": "module",
   "scripts": {
     "build": "npm run clean && tsc",
     "watch": "tsc -w",
-    "clean": "powershell -Command \"if (Test-Path kernel) { Remove-Item -Recurse -Force kernel/* }\"",
+    "clean": "rimraf src/kernel",
     "lint": "tsc --noEmit"
   },
   "repository": {
@@ -17,6 +16,7 @@
   "author": "BlaserE",
   "license": "MIT",
   "devDependencies": {
+    "rimraf": "^6.1.3",
     "typescript": "^5.0.0"
   }
 }

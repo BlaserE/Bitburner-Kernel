@@ -3,7 +3,7 @@
  * This is the script that will be run when the alias 'sudo' is called.
  */
 
-import {AutocompleteData, NS, Server} from "../../NetscriptDefinitions";
+import {AutocompleteData, NS, Server} from "@ns";
 import {BusChannels, DataType, IDispatchRequest, IDispatchReply, IPacket, IRequestPacket, PortManager} from "./PortProtocol";
 import {KernelScript} from "./KernelScript";
 

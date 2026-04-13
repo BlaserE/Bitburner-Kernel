@@ -1,4 +1,4 @@
-import {NS, AutocompleteData} from "../../NetscriptDefinitions";
+import {NS, AutocompleteData} from "@ns";
 import {RAMLedger, IProcess, IServer, CreateServerObject, CreateProcessObject} from "../lib/RAMLedger";
 import {KernelScript} from "../lib/KernelScript";
 import {BusChannels, DataType, IHandshake, IPacket, IProtocol, IRequestPacket, PortManager} from "../lib/PortProtocol";

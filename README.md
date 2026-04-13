@@ -13,8 +13,8 @@ I found the idea of making a "kernel" for Bitburner very funny. So I did it.
 I have provided a script (`Pull.js`) that automatically pulls the latest kernel 'image' from this repository.
 
 You can pull the script to your instance using the following command :
-```
-wget https://raw.githubusercontent.com/BlaserE/Bitburner-Kernel/main/Pull.js Pull.js
+```bash
+wget https://raw.githubusercontent.com/BlaserE/Bitburner-Kernel/main/tools/Pull.js Pull.js
 ```
 
 You can alias it to the command `pull` using this :

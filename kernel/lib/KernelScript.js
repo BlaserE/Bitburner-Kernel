@@ -1,3 +1,4 @@
+// 1. The Contract: Every script must be able to do these things
 import { PortManager, BusChannels, DataType } from "./PortProtocol";
 //import {IKernelPacket, KernelSignal, SignalPayloadMap} from "./PortProtocol";
 const RouteRecord = {
@@ -66,11 +67,13 @@ export class KernelScript {
     async sendAndAwait(type, payload) {
         // flush port cache
         while (this.ns.peek(this.PrivateChannel) !== this.NULL_PORT) {
-            this.ns.readPort(this.PrivateChannel);
+            const message = this.readPrivatePort();
+            // if (message.payload.type)
         }
         const success = this.sendRequest(type, payload);
-        if (!success)
-            return;
+        if (!success) {
+            return { type: DataType.ERROR, data: { message: "BUS_FULL" } };
+        }
         // waits for an answer
         await this.ns.nextPortWrite(this.PrivateChannel);
         return this.readPrivatePort();

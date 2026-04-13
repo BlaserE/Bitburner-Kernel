@@ -1,4 +1,4 @@
-import {NS} from "../../NetscriptDefinitions";
+import {NS} from "@ns";
 import {KernelScript} from "../lib/KernelScript";
 import {IPacket} from "../lib/PortProtocol";
 

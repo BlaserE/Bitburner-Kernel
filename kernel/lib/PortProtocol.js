@@ -19,6 +19,8 @@ export const DataType = {
     // QUERY BUS (Port 6)
     QUERY: "QUERY",
     BATCH_QUERY: "BATCH_QUERY",
+    // Outbound types, those that the Kernel only sends out
+    ERROR: "ERROR",
 };
 // Bus Architecture
 export var BusChannels;
