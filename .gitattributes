@@ -1,0 +1,13 @@
+# Handle line endings automatically
+* text=auto
+
+# Explicitly set JS and TS files to LF (Linux Standard)
+*.js text eol=lf
+*.ts text eol=lf
+
+# Ensure Windows batch files keep CRLF
+*.bat text eol=crlf
+
+# Denote JSON and Markdown as text
+*.json text
+*.md text

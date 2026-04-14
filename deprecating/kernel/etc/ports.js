@@ -20,8 +20,8 @@ export class PortManager {
     static BUS_CRITICAL = 1; // Interrupts (Kills, Reboots)
     static BUS_MUTATE   = 2; // Writes (Ledger/DB updates)
     static BUS_EXEC     = 3; // Schedulers (Spawning scripts)
-    static BUS_QUERY    = 4; // Reads (Asking for data)
-    static BUS_HANDSHAKE = 15;
+    static BUS_HANDSHAKE = 4; // Handshakes
+    static BUS_QUERY    = 5; // Reads (Asking for data)
     static BUS_DEFAULT  = 20; // Handshakes and unknowns
 
     static OFFSET = 1000; // The offset added to a PID to get its listening port. This is where the kernel writes responses to.
