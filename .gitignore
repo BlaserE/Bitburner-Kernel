@@ -23,7 +23,7 @@ bitburner.json
 /tmp/
 
 # --- Personal / Sensitive ---
-# NEVER push your actual API tokens or private configs
+# Not like I have any of those, but nice to be prepared.
 .env
 auth.json
 secrets.txt

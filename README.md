@@ -25,10 +25,17 @@ alias -g pull="run Pull.js"
 [WARNING] Pulling the latest version of the kernel may break your save. Do so at your own risk.
 
 # Kernel Components
+Each component has a more detailed entry in the `src` directory of the repository.
+Look there for more information on the architectural choices.
+
 The kernel is intended to be the communication layer between the software and the hardware.
 In this case, however, the 'hardware' is all the servers to which scripts can be executed.
 
-The kernel is intended to be the only script that is capable of doing `ns.exec`. It will read ports 1-20 to receive information, requests and updates. It uses that to orchestrate running scripts across all servers.
+The kernel is intended to be the only script that is capable of doing `ns.exec`.
+It will read ports 1-20 to receive information, requests and updates.
+It uses that to orchestrate running scripts across all servers.
+
+
 
 ## Ports
 Here is a detailed list of every port and their uses : <br>
@@ -40,14 +47,18 @@ the rest remains to be done, once I actually start using them. They will be adde
 
 ## KernelScript
 This is a class created to facilitate integrating more scripts into the kernel topology.
-Every script that is executed **has** to inherit from it.
+Every script that is executed **has** to inherit from it. It includes basic methods that allow 
+every script extending it to automatically register with the Kernel and the **RAMLedger**.
 
 ## RAMLedger
 The ledger keeps track of every rooted server, it's RAM and running processes.
 It provides methods (used only by the kernel) to add servers, add and free up processes on those servers, 
 as well as method to find if there is space for a specific script.
+
 The ledger is what holds the information of every server and their running processes, indicating available RAM.
-It is the source of truth for executing scripts.
+It is the source of truth for executing scripts. 
+
+
 
 ## Database (NYI)
 The database serves as a static source of information that normally requires `ns` method calls.
@@ -56,5 +67,5 @@ To keep the RAM cost of scripts lean, it was decided that getting the info once 
 
 
 # License
-I am using an MIT license for this project. You are free to use it as you wish and I am not responsible for any damage caused.
+I am using an MIT license for this project. You are free to use it as you wish, and I am not responsible for any damage caused.
 It is free to use and is projected to remain this way forever.

@@ -27,18 +27,32 @@ export async function main(ns) {
     };
 
     const vData = await CheckVersion(ns, CREDS);
-    // --- LOGIC GATE FOR TERMINAL FEEDBACK ---
+
+    // compares remote and local
     if (vData.local === vData.remote) {
-        if (flags.force) {
-            ns.tprint(`FORCE: Re-installing kernel image v${vData.local}...`);
-        } else {
-            ns.tprint(`Version v${vData.local} is current. Running integrity check...`);
+        ns.tprint(`Remote version: ${vData.remote} | Local version: ${vData.local}`);
+
+        // if not forced, exits
+        if (!flags.force) {
+            ns.tprint(`Kernel image up to date with latest (${vData.remote})`);
+            return;
         }
-    } else {
+    }
+
+    const localMajorVer = vData.local.split('.')[0];
+    const remoteMajorVer = vData.remote.split('.')[0];
+
+    if (localMajorVer !== remoteMajorVer && vData.local === "0.0.0") {
+        const result = await ns.prompt(`WARNING: Major version different (Remote version: ${vData.remote} | Local version: ${vData.local}). Proceed anyways?`);
+        if (!result) {
+            return;
+        }
+    }
+
+    if (vData.local !== vData.remote) {
         ns.tprint(`UPGRADE: v${vData.local} -> v${vData.remote}`);
     }
 
-    // Always run the puller; it handles the heavy lifting via SHA comparison
     await PullAllFiles(ns, CREDS, vData, flags);
 }
 
@@ -55,13 +69,12 @@ async function CheckVersion(ns, CREDS) {
     const raw = ns.read("/tmp/package.json")
     // ns.tprint(`Raw file : ${raw}`) // debug print
     const pkg = JSON.parse(raw);
-    const remoteVersion = pkg.version;
+    const remoteVersion = (pkg.version).toString();
 
     // Look for your existing local version.txt
-    const localVersion = ns.fileExists(VERSION_PATH) ? ns.read(VERSION_PATH).trim() : "0.0.0";
+    const localVersion = (ns.fileExists(VERSION_PATH) ? ns.read(VERSION_PATH).trim() : "0.0.0").toString();
 
     ns.rm("/tmp/package.json");
-    ns.tprint(`Remote version: ${remoteVersion} | Local version: ${localVersion}`);
 
     return { local: localVersion, remote: remoteVersion };
 }
@@ -105,7 +118,7 @@ async function PullAllFiles(ns, CREDS, vData, flags) {
             localPath = localPath.replace(".md", ".txt");
         }
 
-        remoteManifest[localPath] = file.sha;
+        // remoteManifest[localPath] = file.sha;
 
         if (localManifest[localPath] === file.sha && ns.fileExists(localPath) && !flags.force) {
             ns.print(`Verified: ${localPath}`);
@@ -138,13 +151,21 @@ async function PullAllFiles(ns, CREDS, vData, flags) {
                     ns.tprint(`  [!] Hash mismatch for ${localPath}. Retrying in 15s...`);
                     await ns.sleep(15000); // The 15-second breather
                 } else {
-                    ns.tprint(`  [X] FATAL: Failed to sync ${localPath} after ${MAX_RETRIES} tries. Check GitHub.`);
+                    ns.tprint(`  [X] ERROR: Failed to sync ${localPath} after ${MAX_RETRIES} tries. Check GitHub.`);
                 }
             }
+            
+        }
+        if (success) {
+            localManifest[localPath] = file.sha;
+        } else {
+            ns.tprint(` [X] ERROR: Failed to sync ${localPath}. Saving progress and exiting.`);
+            ns.write(MANIFEST_PATH, JSON.stringify(localManifest, null, 2), "w");
+            return; // version.txt is NOT updated
         }
     }
 
-    ns.write(MANIFEST_PATH, JSON.stringify(remoteManifest, null, 2), "w");
+    ns.write(MANIFEST_PATH, JSON.stringify(localManifest, null, 2), "w");
     ns.write(VERSION_PATH, `${vData.remote}`, "w");
 
     ns.rm("/tmp/repo_tree.txt")
