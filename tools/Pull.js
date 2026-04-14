@@ -154,7 +154,7 @@ async function PullAllFiles(ns, CREDS, vData, flags) {
                     ns.tprint(`  [X] ERROR: Failed to sync ${localPath} after ${MAX_RETRIES} tries. Check GitHub.`);
                 }
             }
-            
+
         }
         if (success) {
             localManifest[localPath] = file.sha;
