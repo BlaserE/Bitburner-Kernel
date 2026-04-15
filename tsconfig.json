@@ -9,7 +9,7 @@
     ],
     "strict": true,
     "noEmitOnError": true,
-    "outDir": "./kernel",
+    "outDir": "./dist",
     "rootDir": "./src",
     "baseUrl": "./src",
     "paths": {

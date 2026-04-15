@@ -8,7 +8,6 @@ Thumbs.db
 
 # --- Build & Dependencies ---
 node_modules/
-dist/
 build/
 .cache/
 

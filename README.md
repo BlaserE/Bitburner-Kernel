@@ -1,6 +1,6 @@
 # Bitburner-Kernel
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-1.1.1-blue?style=for-the-badge)
 ![License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge)
 ![Platform](https://img.shields.io/badge/Platform-Bitburner-orange?style=for-the-badge)
 
@@ -14,7 +14,7 @@ I have provided a script (`Pull.js`) that automatically pulls the latest kernel 
 
 You can pull the script to your instance using the following command :
 ```bash
-wget https://raw.githubusercontent.com/BlaserE/Bitburner-Kernel/main/bin/Pull.js bin/Pull.js
+wget https://raw.githubusercontent.com/BlaserE/Bitburner-Kernel/main/dist/bin/Pull.js bin/Pull.js
 ```
 
 You can alias it to the command `pull` using this :

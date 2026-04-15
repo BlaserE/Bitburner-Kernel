@@ -15,14 +15,6 @@ export async function main(ns) {
         VERSION_PATH: "etc/version.txt",
         MANIFEST_PATH: "etc/manifest.json"
     };
-    // const config = {
-    //     OWNER: args.owner,
-    //     REPO: args.repo,
-    //     BRANCH: args.branch,
-    //     PACKAGE_PATH: "package.json",      // For the remote check
-    //     VERSION_PATH: "etc/version.txt",    // For the local save-state
-    //     MANIFEST_PATH: "etc/manifest.json"  // For the integrity check
-    // };
     const vData = await CheckVersion(ns, config);
     // check versions ...
     if (vData.local === vData.remote) {
@@ -79,9 +71,9 @@ async function PullAllFiles(ns, config, vData, args) {
     let SyncAllFiles = true;
     let downloadCount = 0;
     // ns.tprint(`Found ${kernelFiles.length} kernel files. Mapping to root...`);
-    const kernelFiles = treeData.tree.filter(item => item.type === "blob" && item.path.startsWith("kernel/"));
+    const kernelFiles = treeData.tree.filter(item => item.type === "blob" && item.path.startsWith("dist/"));
     for (const file of kernelFiles) {
-        let localPath = file.path.replace(/^kernel\//, "");
+        let localPath = file.path.replace(/^dist\//, "");
         if (localPath.endsWith(".md"))
             localPath = localPath.replace(".md", ".txt");
         let needsUpdate = true;
