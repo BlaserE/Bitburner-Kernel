@@ -67,7 +67,7 @@ async function CheckVersion(ns, CREDS) {
 
     // Parse the JSON to get the version string
     const raw = ns.read("/tmp/package.json")
-    // ns.tprint(`Raw file : ${raw}`) // debug print
+
     const pkg = JSON.parse(raw);
     const remoteVersion = (pkg.version).toString();
 
@@ -101,7 +101,7 @@ async function PullAllFiles(ns, CREDS, vData, flags) {
         localManifest = JSON.parse(ns.read(MANIFEST_PATH));
     }
 
-    const remoteManifest = {};
+    // const remoteManifest = {};
     let downloadCount = 0;
 
     const kernelFiles = treeData.tree.filter(item =>
@@ -170,6 +170,10 @@ async function PullAllFiles(ns, CREDS, vData, flags) {
 
     ns.rm("/tmp/repo_tree.txt")
     ns.tprint(`SUCCESS: Update kernel image to v${vData.remote} (${downloadCount} files updated)`);
+}
+
+async function PullFile(ns, file, sha) {
+
 }
 
 /** @param {string} string */
