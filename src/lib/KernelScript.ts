@@ -1,40 +1,7 @@
-// 1. The Contract: Every script must be able to do these things
-import {
-    PortManager,
-    BusChannels,
-    IPacket,
-    IHandshake,
-    DataType,
-    IRequestPacket,
-    IProtocol,
-    IError
-} from "./PortProtocol";
-import {NS} from "@ns";
-//import {IKernelPacket, KernelSignal, SignalPayloadMap} from "./PortProtocol";
+import {IProtocol, KCommand, KernelRequest, IBaseHeader, PRegister, IProtocolParser} from "./protocol.d.ts"
+import {NS} from "@ns"
 
-const RouteRecord: Record<string, BusChannels> = {
-    // Critical
-    [DataType.TERMINATE]: BusChannels.CRITICAL,
-    [DataType.SHUTDOWN]: BusChannels.CRITICAL,
 
-    // Register
-    [DataType.ADD_SERVER]: BusChannels.REGISTER,
-    [DataType.FREE_PROCESS]: BusChannels.REGISTER,
-    [DataType.UPDATE_RAM]: BusChannels.REGISTER,
-
-    // Handshake
-    [DataType.HANDSHAKE]: BusChannels.HANDSHAKE,
-    [DataType.BOOT_SUCCESS]: BusChannels.HANDSHAKE,
-
-    // Dispatch
-    [DataType.DISPATCH]: BusChannels.DISPATCH,
-    [DataType.BATCH_DISPATCH]: BusChannels.DISPATCH,
-
-    // Query
-    [DataType.QUERY]: BusChannels.QUERY,
-    [DataType.BATCH_QUERY]: BusChannels.QUERY,
-
-}
 
 /**
  * Defines the minimum methods and parameters every script extending the KernelScript
@@ -50,7 +17,7 @@ interface IKernelScript {
  * KernelScript is the basic class that all scripts that are to be run in the Kernel-framework
  * HAVE to inherit from.
  */
-export abstract class KernelScript implements IKernelScript, IProtocol {
+export abstract class KernelScript implements IKernelScript, IProtocol, IProtocolParser {
     protected ns: NS;
     protected PrivateChannel: number;
     protected NULL_PORT = "NULL PORT DATA";
@@ -58,7 +25,7 @@ export abstract class KernelScript implements IKernelScript, IProtocol {
 
     constructor(ns: NS, args?:any) {
         this.ns = ns;
-        this.PrivateChannel = PortManager.getChannel(this.ns.pid);
+        this.PrivateChannel = this.ns.pid + 1000;
 
         if (args != null) {
             this.args = args;
@@ -67,9 +34,19 @@ export abstract class KernelScript implements IKernelScript, IProtocol {
 
     // Default implementation: Can be overridden if needed
     public async register(): Promise<void> {
-        const handshake: IPacket = {
-            type: "HANDSHAKE",
-            data: {pid: this.ns.pid}
+        const header: IBaseHeader<KCommand.REGISTER> = {
+            cmd: KCommand.REGISTER,
+            originPid: this.ns.pid,
+            flags: 0x02
+        }
+        const pRegister : PRegister = {
+            ramCost: this.ns.getScriptRam(this.ns.getScriptName()),
+            host: this.ns.getHostname()
+        }
+
+        const register: KernelRequest = {
+            header : header,
+            payload: pRegister,
         }
 
         const data = await this.sendAndAwait(DataType.HANDSHAKE, handshake) as IRequestPacket;
@@ -130,35 +107,20 @@ export abstract class KernelScript implements IKernelScript, IProtocol {
      * It is mostly meant to be used by calling sendAndAwait
      * @protected
      */
-    protected readPrivatePort(): IRequestPacket {
-        return this.readPort(this.PrivateChannel) as IRequestPacket;
+    protected readPrivatePort(): KernelRequest {
+        return this.readPort(this.PrivateChannel) as KernelRequest;
     }
 
-    public sendSignal(type: string, payload: IPacket): boolean {
-        const bus = RouteRecord[type];
+    public writeToPort(port: number, payload: KernelRequest): boolean {
 
-        if (bus == undefined) {
-            this.ns.print(`ERROR: No defined route in RouteRecord for signal type : ${type}`);
-            return false;
-        }
 
-        const request = PortManager.pack(this.ns.pid, payload);
-        const success = this.ns.tryWritePort(bus, request)
-
-        if (!success) {
-            this.ns.print(`WARNING: Write to port ${bus} unsuccessful`);
-        }
-        return success;
+        return false;
     }
 
     /**
-     * IProtocol implementation of readPort.
-     * It verifies if the calling script owns the port being read (PID + 1000)
-     * Afterward, it verifies if the port is empty.
-     * @param port
-     * @return {IRequestPacket | null} Port's content
+     *
      */
-    public readPort(port: number): IRequestPacket | null {
+    public readPort(port: number): KernelRequest | null {
         if (port !== this.PrivateChannel) {
             this.ns.print(`ERROR: Unauthorized port read attempt on port ${port}`);
             return null;
@@ -166,6 +128,18 @@ export abstract class KernelScript implements IKernelScript, IProtocol {
         const rawData = this.ns.readPort(port);
         if (rawData == this.NULL_PORT) return null;
 
-        return PortManager.unpack(rawData);
+        return this.decode(rawData);
+    }
+
+    public encode (request: KernelRequest) : string {
+
+
+        return "";
+    }
+
+    public decode (request: string) : KernelRequest {
+        
+
+        return null;
     }
 }

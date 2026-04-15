@@ -112,7 +112,7 @@ export interface IProtocolParser {
  * Defines the methods that will handle the ports
  */
 export interface IProtocol {
-    sendRequest(type:string | number, payload: KernelRequest): boolean;
+    writeToPort(port: number, payload: KernelRequest): boolean; // sends the fully built KernelRequest
     readPort(port:number):KernelRequest | null;
 }
 
