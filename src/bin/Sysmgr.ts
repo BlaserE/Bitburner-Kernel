@@ -1,37 +1,7 @@
 // This file is what 'manages' the kernel image.
 
 import { NS } from "@ns"
-
-interface ISystemConfig {
-    OWNER: string;
-    REPO: string;
-    BRANCH: string;
-    PACKAGE_PATH: string;
-    VERSION_PATH: string;
-    MANIFEST_PATH: string;
-}
-
-interface IGitHubTreeItem {
-    path: string;
-    mode: string;
-    type: "blob" | "tree";
-    sha: string;
-    size?: number;
-    url?: string;
-}
-
-interface IGitHubTreeResponse {
-    sha: string;
-    url: string;
-    tree: IGitHubTreeItem[];
-    truncated: boolean;
-}
-
-interface IVersionData {
-    local: string;
-    remote: string;
-}
-
+import type { ISystemConfig, IGitHubTreeResponse, IGitHubTreeItem, IVersionData } from "../lib/system.d.ts"
 /**
  * The flags interface for running the pull script.
  */
@@ -149,11 +119,11 @@ async function PullAllFiles(ns: NS, config:ISystemConfig, vData:{local:string, r
     // boolean that if at the end is still true, means image is up to date.
     // otherwise, version remains the same.
     let SyncAllFiles : boolean = true;
-    let downloadCount = 0;
+    let downloadCount: number = 0;
 
     // ns.tprint(`Found ${kernelFiles.length} kernel files. Mapping to root...`);
 
-    const kernelFiles = treeData.tree.filter(item => item.type === "blob" && item.path.startsWith("kernel/"));
+    const kernelFiles:IGitHubTreeItem[] = treeData.tree.filter(item => item.type === "blob" && item.path.startsWith("kernel/"));
     for (const file of kernelFiles) {
         let localPath = file.path.replace(/^kernel\//, "")
         if (localPath.endsWith(".md")) localPath = localPath.replace(".md", ".txt");
@@ -175,8 +145,8 @@ async function PullAllFiles(ns: NS, config:ISystemConfig, vData:{local:string, r
         // --- Download and retry ---
         const rawUrl = `https://raw.githubusercontent.com/${OWNER}/${REPO}/${BRANCH}/${file.path}`;
         const MAX_RETRIES = 3;
-        let attempt = 0;
-        let success = false;
+        let attempt:number = 0;
+        let success:boolean = false;
 
         while (attempt < MAX_RETRIES && !success) {
             ns.tprint(`  -> Syncing: ${localPath} (${attempt + 1})`);
@@ -243,7 +213,7 @@ async function TryPullFile (ns:NS, url:string, path:string, remoteHash:string):P
  * Calculates and returns the SHA-1 of the file content it receives as 'blob'.
  * @param fileBlob The content of the file to be hashed.
  */
-async function getHash(fileBlob:string) {
+async function getHash(fileBlob:string): Promise<string> {
     const msgUint8 = new TextEncoder().encode(fileBlob);
     const hashBuffer = await crypto.subtle.digest('SHA-1', msgUint8);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
