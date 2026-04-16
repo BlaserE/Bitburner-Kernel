@@ -1,4 +1,5 @@
-import {IProtocol, KCommand, KernelRequest, IBaseHeader, PRegister, IProtocolParser} from "./protocol.d.ts"
+import type {IProtocol, KernelRequest, IBaseHeader, PRegister, IProtocolParser} from "./protocol.d.ts"
+import { KCommand, KFlag, KResponseStatus } from "./protocol-bitmask";
 import {NS} from "@ns"
 
 
@@ -49,11 +50,11 @@ export abstract class KernelScript implements IKernelScript, IProtocol, IProtoco
             payload: pRegister,
         }
 
-        const data = await this.sendAndAwait(DataType.HANDSHAKE, handshake) as IRequestPacket;
+        // const data = await this.sendAndAwait(DataType.HANDSHAKE, handshake) as IRequestPacket;
 
 
 
-        this.ns.print(`[KernelScript] Received handshake from Kernel : ${data}`)
+        // this.ns.print(`[KernelScript] Received handshake from Kernel : ${data}`)
     }
 
     /**
@@ -66,11 +67,11 @@ export abstract class KernelScript implements IKernelScript, IProtocol, IProtoco
      *
      */
     public shutdown(): void {
-        const process: IPacket = {
-            type: "FREE_PROCESS",
-            data: {pid: this.ns.pid}
-        }
-        this.sendRequest(DataType.FREE_PROCESS, process);
+        // const process: IPacket = {
+        //     type: "FREE_PROCESS",
+        //     data: {pid: this.ns.pid}
+        // }
+        // this.sendRequest(DataType.FREE_PROCESS, process);
         this.ns.exit();
     }
 
@@ -80,27 +81,27 @@ export abstract class KernelScript implements IKernelScript, IProtocol, IProtoco
      * @param payload
      * @protected
      */
-    protected sendRequest(type: string, payload: IPacket): boolean {
-        return this.sendSignal(type, payload);
-    }
+    // protected sendRequest(type: string, payload: IPacket): boolean {
+    //     return this.sendSignal(type, payload);
+    // }
 
-    protected async sendAndAwait(type: string, payload: IPacket): Promise<any> {
-        // flush port cache
-        while (this.ns.peek(this.PrivateChannel) !== this.NULL_PORT) {
-            const message = this.readPrivatePort();
-
-            // if (message.payload.type)
-        }
-
-        const success = this.sendRequest(type, payload);
-        if (!success) {
-            return { type: DataType.ERROR, data: { message: "BUS_FULL" } };
-        }
-        // waits for an answer
-        await this.ns.nextPortWrite(this.PrivateChannel)
-
-        return this.readPrivatePort();
-    }
+    // protected async sendAndAwait(type: string, payload: IPacket): Promise<any> {
+    //     // flush port cache
+        // while (this.ns.peek(this.PrivateChannel) !== this.NULL_PORT) {
+        //     const message = this.readPrivatePort();
+        //
+        //     // if (message.payload.type)
+        // }
+        //
+        // const success = this.sendRequest(type, payload);
+        // if (!success) {
+        //     return { type: DataType.ERROR, data: { message: "BUS_FULL" } };
+        // }
+        // // waits for an answer
+        // await this.ns.nextPortWrite(this.PrivateChannel)
+        //
+        // return this.readPrivatePort();
+    // }
 
     /**
      * KernelScript-specific method for reading private ports.
@@ -138,8 +139,21 @@ export abstract class KernelScript implements IKernelScript, IProtocol, IProtoco
     }
 
     public decode (request: string) : KernelRequest {
-        
+        const header: IBaseHeader<KCommand.REGISTER> = {
+            cmd: KCommand.REGISTER,
+            originPid: this.ns.pid,
+            flags: 0x02
+        }
+        const pRegister : PRegister = {
+            ramCost: this.ns.getScriptRam(this.ns.getScriptName()),
+            host: this.ns.getHostname()
+        }
 
-        return null;
+        const register: KernelRequest = {
+            header : header,
+            payload: pRegister,
+        }
+
+        return register;
     }
 }

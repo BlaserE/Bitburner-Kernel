@@ -2,7 +2,6 @@
  * lib/Sudo.ts
  * This is the script that will be run when the alias 'sudo' is called.
  */
-import { DataType } from "./PortProtocol";
 import { KernelScript } from "./KernelScript";
 /**
  * Flags schema for terminal autocomplete.
@@ -82,12 +81,11 @@ class Sudo extends KernelScript {
             }
         };
         // does not call PortManager.pack, the sendAndAwait does it by itself.
-        const answer = await this.sendAndAwait(DataType.DISPATCH, packet);
-        if (answer && answer.success) {
-            this.ns.tprint(`[SUDO] Execution successful, script PID : ${answer.pid}`);
-        }
-        else {
-            this.ns.tprint(`[SUDO] Execution failed. Check Kernel Logs.`);
-        }
+        // const answer: IDispatchReply = await this.sendAndAwait(DataType.DISPATCH, packet);
+        // if (answer && answer.success) {
+        //     this.ns.tprint(`[SUDO] Execution successful, script PID : ${answer.pid}`);
+        // } else {
+        //     this.ns.tprint(`[SUDO] Execution failed. Check Kernel Logs.`);
+        // }
     }
 }

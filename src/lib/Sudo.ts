@@ -112,13 +112,13 @@ class Sudo extends KernelScript {
             }
         };
         // does not call PortManager.pack, the sendAndAwait does it by itself.
-        const answer: IDispatchReply = await this.sendAndAwait(DataType.DISPATCH, packet);
+        // const answer: IDispatchReply = await this.sendAndAwait(DataType.DISPATCH, packet);
 
-        if (answer && answer.success) {
-            this.ns.tprint(`[SUDO] Execution successful, script PID : ${answer.pid}`);
-        } else {
-            this.ns.tprint(`[SUDO] Execution failed. Check Kernel Logs.`);
-        }
+        // if (answer && answer.success) {
+        //     this.ns.tprint(`[SUDO] Execution successful, script PID : ${answer.pid}`);
+        // } else {
+        //     this.ns.tprint(`[SUDO] Execution failed. Check Kernel Logs.`);
+        // }
 
     }
 
