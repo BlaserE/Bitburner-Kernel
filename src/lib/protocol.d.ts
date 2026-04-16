@@ -56,26 +56,29 @@ export interface PFree {
 /**
  * THE GRAND UNIFIER: The Discriminated Union
  */
-export type KernelRequest =
+export type KRequest =
     // the requests
     | { header: IBaseHeader<KCommand.KILL>, payload: PKill }
     | { header: IBaseHeader<KCommand.EXEC>, payload: PExec }
     | { header: IBaseHeader<KCommand.REGISTER>, payload: PRegister }
     | { header: IBaseHeader<KCommand.HEARTBEAT>, payload: null } // because it is only a heartbeat, has no other payload.
     | { header: IBaseHeader<KCommand.FREE>, payload: PFree }
-    // the responses
-    | { header: IResponseHeader & { status: KResponseStatus.SUCCESS }; payload: RSuccessExec | null }
-    | { header: IResponseHeader & { status: KResponseStatus.ERROR }; payload: RError }
-// Add new commands here...
+   // Add new commands here...
     ;
 
+export type KResponse =
+    | { header: IResponseHeader & { status: KResponseStatus.SUCCESS }; payload: RSuccessExec | null }
+    | { header: IResponseHeader & { status: KResponseStatus.ERROR }; payload: RError }
+;
+
+export type KernelPacket = KRequest | KResponse;
 /**
  * The Request Constructor Interface
  * Simply defines how the transcoding of requests should result in.
  */
 export interface IProtocolParser {
-    encode(request: KernelRequest): string; // returns a string to be sent to a port.
-    decode(packet: string): KernelRequest; // returns a parsable object
+    encode(request: KernelPacket): string; // returns a string to be sent to a port.
+    decode(packet: string): KernelPacket; // returns a parsable object
     validate?(packet: string): boolean;
 }
 
@@ -84,8 +87,8 @@ export interface IProtocolParser {
  * Defines the methods that will handle the ports
  */
 export interface IProtocol {
-    writeToPort(port: number, payload: KernelRequest): boolean; // sends the fully built KernelRequest
-    readPort(port:number):KernelRequest | null;
+    writeToPort(port: number, payload: KernelPacket): boolean; // sends the fully built KernelRequest
+    readPort(port:number):KernelPacket | null;
 }
 
 // stuff in kernel loop :

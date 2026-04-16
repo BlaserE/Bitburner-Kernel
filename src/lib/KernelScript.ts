@@ -1,5 +1,12 @@
-import type {IProtocol, KernelRequest, IBaseHeader, PRegister, IProtocolParser} from "./protocol.d.ts"
-import { KCommand, KFlag, KResponseStatus } from "./protocol-bitmask";
+import type {
+    IProtocol,
+    KRequest,
+    IBaseHeader,
+    PRegister,
+    IProtocolParser,
+    KernelPacket
+} from "./protocol.d.ts"
+import {forgeHeader, KCommand, KFlag, KResponseStatus} from "./protocol-bitmask";
 import {NS} from "@ns"
 
 
@@ -24,9 +31,13 @@ export abstract class KernelScript implements IKernelScript, IProtocol, IProtoco
     protected NULL_PORT = "NULL PORT DATA";
     protected args: any;
 
+    protected myFlags: number;
+
     constructor(ns: NS, args?:any) {
         this.ns = ns;
         this.PrivateChannel = this.ns.pid + 1000;
+
+        this.myFlags = this.ns.args[0] as number?? 0;
 
         if (args != null) {
             this.args = args;
@@ -45,7 +56,7 @@ export abstract class KernelScript implements IKernelScript, IProtocol, IProtoco
             host: this.ns.getHostname()
         }
 
-        const register: KernelRequest = {
+        const register: KernelPacket = {
             header : header,
             payload: pRegister,
         }
@@ -108,20 +119,26 @@ export abstract class KernelScript implements IKernelScript, IProtocol, IProtoco
      * It is mostly meant to be used by calling sendAndAwait
      * @protected
      */
-    protected readPrivatePort(): KernelRequest {
-        return this.readPort(this.PrivateChannel) as KernelRequest;
-    }
-
-    public writeToPort(port: number, payload: KernelRequest): boolean {
-
-
-        return false;
+    protected readPrivatePort(): KernelPacket {
+        return this.readPort(this.PrivateChannel) as KernelPacket;
     }
 
     /**
-     *
+     * Implementation of the IProtocol interface.
+     * @param port
+     * @param payload
      */
-    public readPort(port: number): KernelRequest | null {
+    public writeToPort(port: number, payload: KRequest): boolean {
+        payload.header.flags |= this.myFlags;
+
+        const encodedString: string = this.encode(payload);
+        return this.ns.tryWritePort(port, encodedString);
+    }
+
+    /**
+     * Implementation of the IProtocol interface
+     */
+    public readPort(port: number): KernelPacket | null {
         if (port !== this.PrivateChannel) {
             this.ns.print(`ERROR: Unauthorized port read attempt on port ${port}`);
             return null;
@@ -132,13 +149,21 @@ export abstract class KernelScript implements IKernelScript, IProtocol, IProtoco
         return this.decode(rawData);
     }
 
-    public encode (request: KernelRequest) : string {
-
+    /**
+     * Implementation of the IProtocolParser interfaec
+     * @param request
+     */
+    public encode(request: KernelPacket) : string {
+        const headerstr: string = forgeHeader(request.header as IBaseHeader<any>)
 
         return "";
     }
 
-    public decode (request: string) : KernelRequest {
+    /**
+     * Implementation of the IProtocolParser interfaec
+     * @param request
+     */
+    public decode (request: string) : KernelPacket {
         const header: IBaseHeader<KCommand.REGISTER> = {
             cmd: KCommand.REGISTER,
             originPid: this.ns.pid,
@@ -149,7 +174,7 @@ export abstract class KernelScript implements IKernelScript, IProtocol, IProtoco
             host: this.ns.getHostname()
         }
 
-        const register: KernelRequest = {
+        const register: KernelPacket = {
             header : header,
             payload: pRegister,
         }

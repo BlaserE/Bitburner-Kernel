@@ -1,4 +1,4 @@
-import { KCommand } from "./protocol-bitmask";
+import { forgeHeader, KCommand } from "./protocol-bitmask";
 /**
  * KernelScript is the basic class that all scripts that are to be run in the Kernel-framework
  * HAVE to inherit from.
@@ -8,9 +8,11 @@ export class KernelScript {
     PrivateChannel;
     NULL_PORT = "NULL PORT DATA";
     args;
+    myFlags;
     constructor(ns, args) {
         this.ns = ns;
         this.PrivateChannel = this.ns.pid + 1000;
+        this.myFlags = this.ns.args[0] ?? 0;
         if (args != null) {
             this.args = args;
         }
@@ -78,11 +80,18 @@ export class KernelScript {
     readPrivatePort() {
         return this.readPort(this.PrivateChannel);
     }
+    /**
+     * Implementation of the IProtocol interface.
+     * @param port
+     * @param payload
+     */
     writeToPort(port, payload) {
-        return false;
+        payload.header.flags |= this.myFlags;
+        const encodedString = this.encode(payload);
+        return this.ns.tryWritePort(port, encodedString);
     }
     /**
-     *
+     * Implementation of the IProtocol interface
      */
     readPort(port) {
         if (port !== this.PrivateChannel) {
@@ -94,9 +103,18 @@ export class KernelScript {
             return null;
         return this.decode(rawData);
     }
+    /**
+     * Implementation of the IProtocolParser interfaec
+     * @param request
+     */
     encode(request) {
+        const headerstr = forgeHeader(request.header);
         return "";
     }
+    /**
+     * Implementation of the IProtocolParser interfaec
+     * @param request
+     */
     decode(request) {
         const header = {
             cmd: KCommand.REGISTER,

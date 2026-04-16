@@ -1,5 +1,6 @@
 /**
  * Command IDs (1 Byte / 2 Hex chars)
+ * There are
  */
 export var KCommand;
 (function (KCommand) {
@@ -28,3 +29,21 @@ export var KResponseStatus;
     KResponseStatus[KResponseStatus["SUCCESS"] = 0] = "SUCCESS";
     KResponseStatus[KResponseStatus["ERROR"] = 1] = "ERROR"; // NACK
 })(KResponseStatus || (KResponseStatus = {}));
+/**
+ * Fuses the header into a deterministic 10-char hex string.
+ * Order: [CMD:2][PID:4][FLAGS:4]
+ */
+export function forgeHeader(header) {
+    const cmdHex = header.cmd.toString(16).padStart(2, '0');
+    // PIDs are numbers, originPid: 1024 -> "0400"
+    const pidHex = header.originPid.toString(16).padStart(4, '0');
+    // Flags are a bitmask, e.g., SILENT | ELEVATED
+    const flgHex = header.flags.toString(16).padStart(4, '0');
+    return `${cmdHex}${pidHex}${flgHex}`.toLowerCase();
+}
+export function forgeResponseHeader(header) {
+    const statusHex = header.status.toString(16).padStart(2, '0');
+    const targetPidHex = header.originPid.toString(16).padStart(4, '0');
+    // You could pad the rest with zeros to keep all packets 10 chars
+    return `${statusHex}${targetPidHex}0000`.toLowerCase();
+}
