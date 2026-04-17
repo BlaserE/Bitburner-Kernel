@@ -2,6 +2,7 @@ import {NS, AutocompleteData} from "@ns";
 import {RAMLedger, IProcess, IServer, CreateServerObject, CreateProcessObject} from "../lib/RAMLedger";
 import {KernelScript} from "../lib/KernelScript";
 import {BusChannels, DataType, IHandshake, IPacket, IProtocol, IRequestPacket, PortManager} from "../lib/PortProtocol";
+import {Dentry, Inode, VirtualFileSystem} from "../fs/vfs";
 
 /**
  * Interface for the kernel flags. It uses camelCase because kebab-case is too cool for JS.
@@ -70,8 +71,13 @@ Kernel Boot Options:
  * it hasn't executed itself.
  */
 class Kernel implements IProtocol {
-    private ns: NS
+    // --- CORE KERNEL MODULES ---
     private processDB: RAMLedger;
+    private VFS : VirtualFileSystem;
+    private tokenMap: Map<string, number>;
+
+    private ns: NS
+
     private readonly config: IFlags;
     private lastGC: number;
 
@@ -85,8 +91,11 @@ class Kernel implements IProtocol {
         this.ns = ns;
         this.config = flags;
 
+        this.tokenMap = new Map();
+
         // creates the ledger
         this.processDB = new RAMLedger(this.config);
+        this.VFS = new VirtualFileSystem()
 
         this.boot()
 
