@@ -1,5 +1,6 @@
 import { RAMLedger, CreateServerObject, CreateProcessObject } from "../lib/RAMLedger";
 import { BusChannels, DataType, PortManager } from "../lib/PortProtocol";
+import { VirtualFileSystem } from "../fs/vfs";
 /**
  * Flags schema for terminal autocomplete
  */
@@ -47,8 +48,11 @@ Kernel Boot Options:
  * it hasn't executed itself.
  */
 class Kernel {
-    ns;
+    // --- CORE KERNEL MODULES ---
     processDB;
+    VFS;
+    tokenMap;
+    ns;
     config;
     lastGC;
     /**
@@ -59,8 +63,10 @@ class Kernel {
     constructor(ns, flags) {
         this.ns = ns;
         this.config = flags;
+        this.tokenMap = new Map();
         // creates the ledger
         this.processDB = new RAMLedger(this.config);
+        this.VFS = new VirtualFileSystem();
         this.boot();
         this.lastGC = Date.now(); // should be the last thing called in the constructor
     }
