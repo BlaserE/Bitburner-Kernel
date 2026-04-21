@@ -10,16 +10,16 @@ The philosophy behind this project was to create a foundation upon which I could
 I found the idea of making a "kernel" for Bitburner very funny. So I did it.
 
 ## Pulling the kernel
-I have provided a script (`Pull.js`) that automatically pulls the latest kernel 'image' from this repository.
+I have provided a script (`Sysmgr.js`) that automatically pulls the latest kernel 'image' from this repository.
 
 You can pull the script to your instance using the following command :
 ```bash
-wget https://raw.githubusercontent.com/BlaserE/Bitburner-Kernel/main/dist/bin/Pull.js bin/Pull.js
+wget https://raw.githubusercontent.com/BlaserE/Bitburner-Kernel/main/dist/bin/Sysmgr.js bin/Sysmgr.js
 ```
 
 You can alias it to the command `pull` using this :
 ```
-alias -g pull="run bin/Pull.js"
+alias -g pull="run bin/Sysmgr.js"
 ```
 
 [WARNING] Pulling the latest version of the kernel may break your save. Do so at your own risk.
