@@ -1,5 +1,6 @@
-// This file is what 'manages' the kernel image.
-
+/**
+ * Genuinely an amazing script in my opinion. 
+ */
 import { NS } from "@ns"
 import type { ISystemConfig, IGitHubTreeResponse, IGitHubTreeItem, IVersionData } from "../lib/system.d.ts"
 /**

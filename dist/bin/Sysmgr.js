@@ -1,4 +1,3 @@
-// This file is what 'manages' the kernel image.
 const schema = [
     ['force', false],
     ['owner', "BlaserE"],
