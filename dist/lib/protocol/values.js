@@ -16,6 +16,14 @@ export var FrameFlag;
     FrameFlag[FrameFlag["ELEVATED"] = 8] = "ELEVATED";
     FrameFlag[FrameFlag["HAS_ARGS"] = 16] = "HAS_ARGS";
 })(FrameFlag || (FrameFlag = {}));
+var Priority;
+(function (Priority) {
+    Priority[Priority["CRITICAL"] = 0] = "CRITICAL";
+    Priority[Priority["HIGH"] = 1] = "HIGH";
+    Priority[Priority["NORMAL"] = 2] = "NORMAL";
+    Priority[Priority["LOW"] = 3] = "LOW";
+    Priority[Priority["IDLE"] = 4] = "IDLE"; // Opportunistic; only runs if RAM is abundant
+})(Priority || (Priority = {}));
 export var AckStatus;
 (function (AckStatus) {
     AckStatus[AckStatus["OK"] = 0] = "OK";

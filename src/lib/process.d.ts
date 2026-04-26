@@ -1,9 +1,12 @@
+import {Priority, ProcessState} from "./values";
+import {ProcessInfo} from "@ns";
+
 /**
  * ./lib/process.d.ts
  * The file that holds all interfaces for use by processes.
  * Contains process identities as much as policies and status.
  */
-export interface IProcess {
+interface IProcess {
     pid:          number;           // Bitburner's own PID — the canonical identity
     inboxPort:    number;           // PROCESS_PORT_BASE + pid; derived, never injected
     script:       string;           // Path to .js file on host
@@ -21,7 +24,7 @@ export interface IProcess {
     provides:     string[];         // Service names this process exports
 }
 
-export interface RestartPolicy {
+interface RestartPolicy {
     mode:        "never" | "always" | "on-failure" | "on-exit";
     maxRetries:  number;          // -1 = unlimited
     retryDelay:  number;          // ms before respawn attempt
@@ -29,11 +32,35 @@ export interface RestartPolicy {
     retryCount:  number;          // mutable; reset on clean run
 }
 
-export interface ProcessState {
 
 
+interface ProcessSpec {
+    script:         string;
+    host?:          string;           // defaults to "home"
+    threads?:       number;           // defaults to 1
+    args?:          (string|number|boolean)[];
+    spawnFlags?:    number;           // FrameFlag bitmask injected as args[0]
+    priority?:       Priority;
+    restartPolicy?:  Partial<RestartPolicy>;
+    provides?:      string[];
+    dependencies?:  string[];
+    ramOverride?:   number;           // if set, skip ns.getScriptRam()
 }
 
-export interface Priority {
 
+interface IProcessTable {
+    add(spec: ProcessSpec): IProcess;
+    get(pid: number):  IProcess | undefined;
+    list(filter?: Partial<IProcess>): IProcess[]
+    transition(pid: number, newState: ProcessState, reason?: string): [ProcessState, ProcessState] | undefined;
+    reconcile(liveProcesses: ProcessInfo[]): any;
+    remove(pid: number): boolean;
+}
+
+interface ServiceDeclaration {
+    name:      string;   // e.g., "hack-scheduler"
+    version:   string;   // semver; registry enforces major-version compat
+    inboxPort: number;   // owning process's inbox port; callers write here directly
+    pid:       number;   // owning Bitburner PID
+    metadata:  Record<string, string | number | boolean>;
 }

@@ -1,7 +1,7 @@
 // This file is what 'manages' the kernel image.
 
 import { NS } from "@ns"
-import type { ISystemConfig, IGitHubTreeResponse, IGitHubTreeItem, IVersionData } from "../lib/system/system.d.ts"
+import type { ISystemConfig, IGitHubTreeResponse, IGitHubTreeItem, IVersionData } from "../lib/system.d.ts"
 /**
  * The flags interface for running the pull script.
  */
