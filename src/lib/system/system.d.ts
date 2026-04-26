@@ -1,3 +1,8 @@
+/**
+ * ./lib/system/system.d.ts
+ * The file that includes the data meant for the sysmgr.ts script to use to update the kernel dynamically
+ */
+
 export interface ISystemConfig {
     OWNER: string;
     REPO: string;
