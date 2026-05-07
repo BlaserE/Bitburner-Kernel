@@ -1,7 +1,7 @@
 /**
  * Genuinely an amazing script in my opinion.
  */
-import { NS } from "@ns"
+import {AutocompleteData, NS} from "@ns"
 import type { ISystemConfig, IGitHubTreeResponse, IGitHubTreeItem, IVersionData } from "../lib/sysmgr.d.ts"
 /**
  * The flags interface for running the pull script.
@@ -21,6 +21,10 @@ const schema: [string, string | number | boolean | []][] = [
     ['repo', "Bitburner-Kernel"],
     ['branch', "main"],
 ]
+
+export function autocomplete(data: AutocompleteData, args: string[]): string[] {
+    return Object.keys(data.flags(schema));
+}
 
 export async function main(ns: NS): Promise<void> {
     const args = ns.flags(schema) as IFlags

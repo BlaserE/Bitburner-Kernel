@@ -1,10 +1,12 @@
-// This file is what 'manages' the kernel image.
 const schema = [
     ['force', false],
     ['owner', "BlaserE"],
     ['repo', "Bitburner-Kernel"],
     ['branch', "main"],
 ];
+export function autocomplete(data, args) {
+    return Object.keys(data.flags(schema));
+}
 export async function main(ns) {
     const args = ns.flags(schema);
     const config = {
