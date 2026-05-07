@@ -20,7 +20,7 @@ export async function main(ns) {
     const vData = await CheckVersion(ns, config);
     // check versions ...
     if (vData.local === vData.remote) {
-        ns.tprint(`Remote version: ${vData.remote} | Local version: ${vData.local}`);
+        ns.tprint(`Remote version: ${vData.remote}  | Local version: ${vData.local}`);
         // if not forced, exits
         if (!args.force) {
             ns.tprint(`Kernel image up to date with latest (v${vData.remote})`);
