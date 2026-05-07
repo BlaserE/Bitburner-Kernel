@@ -40,6 +40,11 @@ export async function main(ns: NS): Promise<void> {
 
     const vData: IVersionData = await CheckVersion(ns, config)
 
+    ns.tprint(`INFO ╔══ Kernel Sync ══════════════════════════════╗`);
+    ns.tprint(`INFO ║  Source : ${config.OWNER}/${config.REPO}`);
+    ns.tprint(`INFO ║  Branch : ${config.BRANCH}`);
+    ns.tprint(`INFO ╚═════════════════════════════════════════════╝`);
+
     // check versions ...
     if (vData.local === vData.remote) {
         ns.tprint(`Remote version: ${vData.remote}  | Local version: ${vData.local}`);

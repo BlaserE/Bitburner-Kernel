@@ -19,6 +19,36 @@ const schema: [string, string | number | boolean | []][] = [
     ['branch', "main"],
 ]
 
+const c = {
+    reset:      "\u001b[0m",
+
+    // standard colors
+    black:      "\u001b[30m",
+    red:        "\u001b[31m",
+    green:      "\u001b[32m",
+    yellow:     "\u001b[33m",
+    blue:       "\u001b[34m",
+    magenta:    "\u001b[35m",
+    cyan:       "\u001b[36m",
+    white:      "\u001b[37m",
+
+    // bright variants
+    bBlack:     "\u001b[90m",
+    bRed:       "\u001b[91m",
+    bGreen:     "\u001b[92m",
+    bYellow:    "\u001b[93m",
+    bBlue:      "\u001b[94m",
+    bMagenta:   "\u001b[95m",
+    bCyan:      "\u001b[96m",
+    bWhite:     "\u001b[97m",
+
+    // styles
+    bold:       "\u001b[1m",
+    dim:        "\u001b[2m",
+    italic:     "\u001b[3m",
+    underline:  "\u001b[4m",
+};
+
 export function autocomplete(data: AutocompleteData, args: string[]): string[] {
     return Object.keys(data.flags(schema));
 }
@@ -34,41 +64,45 @@ export async function main(ns: NS): Promise<void> {
         VERSION_PATH: "etc/version.txt",
         MANIFEST_PATH: "etc/manifest.json"
     };
+    ns.tprint(`${c.bGreen}[sysmgr]${c.reset} Synchronising with ${c.bold}${config.OWNER}/${config.REPO}${c.reset} (${config.BRANCH})`);
 
-    ns.tprint(`INFO ╔══ Kernel Sync ══════════════════════════════╗`);
-    ns.tprint(`INFO ║  Source : ${config.OWNER}/${config.REPO}`);
-    ns.tprint(`INFO ║  Branch : ${config.BRANCH}`);
-    ns.tprint(`INFO ╚═════════════════════════════════════════════╝`);
+    // ns.tprint(`${c.green} ╔══ Kernel Sync ══════════════════════════════╗`);
+    // ns.tprint(`${c.green} ║  Source : ${c.reset}${config.OWNER}/${config.REPO}`);
+    // ns.tprint(`${c.green} ║  Branch : ${c.reset}${config.BRANCH}`);
+    // ns.tprint(`${c.green} ╚═════════════════════════════════════════════╝${c.reset}`);
 
     const vData: IVersionData = await CheckVersion(ns, config);
 
-    ns.tprint(`INFO  Remote  v${vData.remote}  │  Local  v${vData.local}`);
+    ns.tprint(`${c.bGreen}[sysmgr]${c.reset} Remote v${vData.remote} — Local v${vData.local}`);
+    // ns.tprint(`Sysmgr:  Remote  v${vData.remote}  │  Local  v${vData.local}`);
 
     if (vData.local === vData.remote) {
         if (!args.force) {
-            ns.tprint(`SUCCESS Already up to date. Use --force to reinstall.`);
+            ns.tprint(`${c.bGreen}[sysmgr]${c.reset} Nothing to do.`); // up to date
+            // ns.tprint(`Already up to date. Use --force to reinstall.`);
             return;
         }
-        ns.tprint(`WARN  Up to date, but --force is set — reinstalling.`);
+        ns.tprint(`${c.yellow}[sysmgr]${c.reset} --force set, reinstalling anyway.`); // forced
     }
 
     const localMajor  = vData.local.split('.')[0];
     const remoteMajor = vData.remote.split('.')[0];
 
     if (localMajor !== remoteMajor && vData.local !== "0.0.0") {
-        ns.tprint(`WARN  Major version mismatch (${vData.local} → ${vData.remote}). Prompting for confirmation.`);
+        ns.tprint(`${c.red}  Major version mismatch (${vData.local} → ${vData.remote}). Prompting for confirmation.${c.reset}`);
         const proceed = await ns.prompt(
-            `Major version change: v${vData.local} → v${vData.remote}. This may include breaking changes. Proceed?`,
+            `${c.yellow}Major version change: v${vData.local} -> v${vData.remote}. This may include breaking changes. Proceed?${c.reset}`,
             { type: "boolean" }
         );
         if (!proceed) {
-            ns.tprint(`WARN  Sync aborted by user.`);
+            ns.tprint(`${c.red}Sync aborted by user.${c.reset}`);
             return;
         }
     }
 
     if (vData.local !== vData.remote) {
-        ns.tprint(`INFO  Upgrading  v${vData.local}  →  v${vData.remote}`);
+        ns.tprint(`${c.bGreen}[sysmgr]${c.reset} Upgrading ${c.bold}v${vData.local}${c.reset} → ${c.bold}v${vData.remote}${c.reset}`);
+        // ns.tprint(`Upgrading  v${vData.local}  →  v${vData.remote}`);
     }
 
     await PullAllFiles(ns, config, vData, args);
@@ -102,9 +136,8 @@ async function PullAllFiles(ns: NS, config: ISystemConfig, vData: IVersionData, 
     if (ns.fileExists(MANIFEST_PATH)) {
         localManifest = JSON.parse(ns.read(MANIFEST_PATH));
     }
-
-    ns.tprint(`INFO  Found ${kernelFiles.length} files in dist/. Beginning sync.`);
-    ns.tprint(`INFO  ─────────────────────────────────────────────`);
+    ns.tprint(`${c.bGreen}[sysmgr]${c.reset} Found ${kernelFiles.length} files. Resolving...`);
+    ns.tprint(`────(Syncing Kernel Image)─────────────────────────────────────────`);
 
     let syncClean     = true;
     let downloadCount = 0;
@@ -120,7 +153,7 @@ async function PullAllFiles(ns: NS, config: ISystemConfig, vData: IVersionData, 
             const diskSha     = await getHash(`blob ${new TextEncoder().encode(diskContent).length}\0${diskContent}`);
 
             if (diskSha === file.sha) {
-                ns.tprint(`INFO    SKIP  ${localPath}`);
+                ns.tprint(`  ${c.dim}~ ${localPath} (up to date)${c.reset}`); // skipped
                 skipCount++;
                 continue;
             }
@@ -139,29 +172,28 @@ async function PullAllFiles(ns: NS, config: ISystemConfig, vData: IVersionData, 
             if (success) {
                 localManifest[localPath] = file.sha;
                 downloadCount++;
-                ns.tprint(`SUCCESS   SYNC  ${localPath}`);
+                ns.tprint(`  ${c.bGreen}✔${c.reset} ${localPath}`); // synced
             } else if (attempt < MAX_RETRIES) {
-                ns.tprint(`WARN    RETRY  ${localPath}  (attempt ${attempt}/${MAX_RETRIES}) — waiting 15s`);
+                ns.tprint(`  ${c.yellow}↻ ${localPath} — retry ${attempt}/${MAX_RETRIES}, waiting 15s${c.reset}`); // retry
                 await ns.sleep(15000);
             }
         }
 
         if (!success) {
-            ns.tprint(`ERROR   FAIL  ${localPath}  — gave up after ${MAX_RETRIES} attempts`);
+            ns.tprint(`  ${c.red}✘ ${localPath} — failed after ${MAX_RETRIES} attempts${c.reset}`); // failed
             syncClean = false;
         }
     }
-
-    ns.tprint(`INFO  ─────────────────────────────────────────────`);
-    ns.tprint(`INFO  Synced ${downloadCount} file(s), skipped ${skipCount} — ${syncClean ? "clean" : "incomplete"}.`);
+    ns.tprint(`${c.dim}─────────────────────────────────────────────${c.reset}`);
 
     ns.write(MANIFEST_PATH, JSON.stringify(localManifest, null, 2), "w");
 
     if (syncClean) {
         ns.write(VERSION_PATH, vData.remote, "w");
-        ns.tprint(`SUCCESS Version pinned to v${vData.remote}.`);
+        ns.tprint(`${c.bGreen}[sysmgr]${c.reset} Synced ${downloadCount} file(s), ${skipCount} skipped.`);
+        ns.tprint(`${c.bGreen}[sysmgr]${c.reset} Version pinned to ${c.bold}v${vData.remote}${c.reset}.`);
     } else {
-        ns.tprint(`WARN  Version NOT updated — some files failed. Fix errors and re-run.`);
+        ns.tprint(`${c.red}[sysmgr]${c.reset} Sync incomplete — some files failed.`);       // on error
     }
 
     ns.rm("tmp/repo_tree.txt");
