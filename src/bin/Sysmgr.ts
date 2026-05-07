@@ -42,7 +42,7 @@ export async function main(ns: NS): Promise<void> {
 
     // check versions ...
     if (vData.local === vData.remote) {
-        ns.tprint(`Remote version: ${vData.remote} | Local version: ${vData.local}`);
+        ns.tprint(`Remote version: ${vData.remote}  | Local version: ${vData.local}`);
 
         // if not forced, exits
         if (!args.force) {
@@ -69,7 +69,6 @@ export async function main(ns: NS): Promise<void> {
     }
 
     await PullAllFiles(ns, config, vData, args);
-
 }
 
 async function CheckVersion(ns: NS, config:ISystemConfig): Promise<IVersionData> {
