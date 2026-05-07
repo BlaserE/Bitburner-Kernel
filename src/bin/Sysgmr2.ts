@@ -35,7 +35,7 @@ const c = {
     // bright variants
     bBlack:     "\u001b[90m",
     bRed:       "\u001b[91m",
-    bGreen:     "\u001b[92m",
+    // bGreen:     "\u001b[92m",
     bYellow:    "\u001b[93m",
     bBlue:      "\u001b[94m",
     bMagenta:   "\u001b[95m",
@@ -64,7 +64,7 @@ export async function main(ns: NS): Promise<void> {
         VERSION_PATH: "etc/version.txt",
         MANIFEST_PATH: "etc/manifest.json"
     };
-    ns.tprint(`${c.bGreen}[sysmgr]${c.reset} Synchronising with ${c.bold}${config.OWNER}/${config.REPO}${c.reset} (${config.BRANCH})`);
+    ns.tprint(`${c.green}[sysmgr]${c.reset} Synchronising with ${c.bold}${config.OWNER}/${config.REPO}${c.reset} (${config.BRANCH})`);
 
     // ns.tprint(`${c.green} ╔══ Kernel Sync ══════════════════════════════╗`);
     // ns.tprint(`${c.green} ║  Source : ${c.reset}${config.OWNER}/${config.REPO}`);
@@ -73,12 +73,12 @@ export async function main(ns: NS): Promise<void> {
 
     const vData: IVersionData = await CheckVersion(ns, config);
 
-    ns.tprint(`${c.bGreen}[sysmgr]${c.reset} Remote v${vData.remote} — Local v${vData.local}`);
+    ns.tprint(`${c.green}[sysmgr]${c.reset} Remote v${vData.remote} — Local v${vData.local}`);
     // ns.tprint(`Sysmgr:  Remote  v${vData.remote}  │  Local  v${vData.local}`);
 
     if (vData.local === vData.remote) {
         if (!args.force) {
-            ns.tprint(`${c.bGreen}[sysmgr]${c.reset} Nothing to do.`); // up to date
+            ns.tprint(`${c.green}[sysmgr]${c.reset} Nothing to do.`); // up to date
             // ns.tprint(`Already up to date. Use --force to reinstall.`);
             return;
         }
@@ -101,7 +101,7 @@ export async function main(ns: NS): Promise<void> {
     }
 
     if (vData.local !== vData.remote) {
-        ns.tprint(`${c.bGreen}[sysmgr]${c.reset} Upgrading ${c.bold}v${vData.local}${c.reset} → ${c.bold}v${vData.remote}${c.reset}`);
+        ns.tprint(`${c.green}[sysmgr]${c.reset} Upgrading ${c.bold}v${vData.local}${c.reset} → ${c.bold}v${vData.remote}${c.reset}`);
         // ns.tprint(`Upgrading  v${vData.local}  →  v${vData.remote}`);
     }
 
@@ -136,7 +136,7 @@ async function PullAllFiles(ns: NS, config: ISystemConfig, vData: IVersionData, 
     if (ns.fileExists(MANIFEST_PATH)) {
         localManifest = JSON.parse(ns.read(MANIFEST_PATH));
     }
-    ns.tprint(`${c.bGreen}[sysmgr]${c.reset} Found ${kernelFiles.length} files. Resolving...`);
+    ns.tprint(`${c.green}[sysmgr]${c.reset} Found ${kernelFiles.length} files. Resolving...`);
     ns.tprint(`────(Syncing Kernel Image)─────────────────────────────────────────`);
 
     let syncClean     = true;
@@ -172,7 +172,7 @@ async function PullAllFiles(ns: NS, config: ISystemConfig, vData: IVersionData, 
             if (success) {
                 localManifest[localPath] = file.sha;
                 downloadCount++;
-                ns.tprint(`  ${c.bGreen}✔${c.reset} ${localPath}`); // synced
+                ns.tprint(`  ${c.green}✔${c.reset} ${localPath}`); // synced
             } else if (attempt < MAX_RETRIES) {
                 ns.tprint(`  ${c.yellow}↻ ${localPath} — retry ${attempt}/${MAX_RETRIES}, waiting 15s${c.reset}`); // retry
                 await ns.sleep(15000);
@@ -190,8 +190,8 @@ async function PullAllFiles(ns: NS, config: ISystemConfig, vData: IVersionData, 
 
     if (syncClean) {
         ns.write(VERSION_PATH, vData.remote, "w");
-        ns.tprint(`${c.bGreen}[sysmgr]${c.reset} Synced ${downloadCount} file(s), ${skipCount} skipped.`);
-        ns.tprint(`${c.bGreen}[sysmgr]${c.reset} Version pinned to ${c.bold}v${vData.remote}${c.reset}.`);
+        ns.tprint(`${c.green}[sysmgr]${c.reset} Synced ${downloadCount} file(s), ${skipCount} skipped.`);
+        ns.tprint(`${c.green}[sysmgr]${c.reset} Version pinned to ${c.bold}v${vData.remote}${c.reset}.`);
     } else {
         ns.tprint(`${c.red}[sysmgr]${c.reset} Sync incomplete — some files failed.`);       // on error
     }
