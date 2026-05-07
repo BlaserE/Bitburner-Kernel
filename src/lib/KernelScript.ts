@@ -4,7 +4,7 @@
 import {NS, ScriptArg} from "@ns";
 
 
-class KernelScript {
+export class KernelScript {
     protected _ns: NS;
 
 
