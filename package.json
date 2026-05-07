@@ -1,6 +1,6 @@
 {
   "name": "bitburner-kernel",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "A centralized management foundation for Bitburner scripts, emulating a Linux-style root filesystem.",
   "main": "/dist/sbin/Kernel.js",
   "type": "module",
