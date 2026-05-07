@@ -104,12 +104,11 @@ async function PullAllFiles(ns, config, vData, args) {
         let localPath = file.path.replace(/^dist\//, "");
         if (localPath.endsWith(".md"))
             localPath = localPath.replace(".md", ".txt");
-        // Integrity check — skip if manifest + disk hash agree
-        if (localManifest[localPath] === file.sha && !args.force && ns.fileExists(localPath)) {
+        if (localManifest[localPath] === file.sha && ns.fileExists(localPath)) {
             const diskContent = ns.read(localPath);
             const diskSha = await getHash(`blob ${new TextEncoder().encode(diskContent).length}\0${diskContent}`);
             if (diskSha === file.sha) {
-                ns.tprint(`  ${c.dim}~ ${localPath} (up to date)${c.reset}`); // skipped
+                ns.tprint(`  ${c.cyan}~ ${localPath} (up to date)${c.reset}`);
                 skipCount++;
                 continue;
             }
