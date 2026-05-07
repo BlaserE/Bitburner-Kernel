@@ -2,7 +2,7 @@
  * Genuinely an amazing script in my opinion.
  */
 import { NS } from "@ns"
-import type { ISystemConfig, IGitHubTreeResponse, IGitHubTreeItem, IVersionData } from "../lib/system.d.ts"
+import type { ISystemConfig, IGitHubTreeResponse, IGitHubTreeItem, IVersionData } from "../lib/sysmgr.d.ts"
 /**
  * The flags interface for running the pull script.
  */
@@ -34,7 +34,7 @@ export async function main(ns: NS): Promise<void> {
         MANIFEST_PATH: "etc/manifest.json"
     };
 
-    const vData = await CheckVersion(ns, config)
+    const vData: IVersionData = await CheckVersion(ns, config)
 
     // check versions ...
     if (vData.local === vData.remote) {
@@ -68,7 +68,7 @@ export async function main(ns: NS): Promise<void> {
 
 }
 
-async function CheckVersion(ns: NS, config:ISystemConfig): Promise<{ local:string, remote:string }> {
+async function CheckVersion(ns: NS, config:ISystemConfig): Promise<IVersionData> {
     const { OWNER, REPO, BRANCH, PACKAGE_PATH, VERSION_PATH } = config;
 
     const url = `https://raw.githubusercontent.com/${OWNER}/${REPO}/${BRANCH}/${PACKAGE_PATH}?t=${Date.now()}`;
@@ -92,7 +92,7 @@ async function CheckVersion(ns: NS, config:ISystemConfig): Promise<{ local:strin
  * @param args
  * @constructor
  */
-async function PullAllFiles(ns: NS, config:ISystemConfig, vData:{local:string, remote:string}, args:IFlags): Promise<void> {
+async function PullAllFiles(ns: NS, config: ISystemConfig, vData: IVersionData, args: IFlags): Promise<void> {
     const {OWNER, REPO, BRANCH, MANIFEST_PATH, VERSION_PATH} = config;
 
     ns.tprint(`Synchronising with repo at ${OWNER}/${REPO} [${BRANCH}]`)
