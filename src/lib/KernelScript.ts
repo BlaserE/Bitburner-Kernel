@@ -26,10 +26,10 @@ export abstract class KernelScript {
     protected constructor(ns: NS, args: ScriptArg[]) {
         this._ns = ns;
         this._args = args;
-        this.onInit(ns)
+        this.onInit()
     }
 
-    protected abstract onInit(ns: NS): void;
+    protected abstract onInit(): void;
 
 
 

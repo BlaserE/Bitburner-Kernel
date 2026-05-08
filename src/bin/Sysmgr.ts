@@ -35,7 +35,6 @@ const c = {
 
     // styles
     bold: "\u001b[1m",
-    dim: "\u001b[2m",
     italic: "\u001b[3m",
     underline: "\u001b[4m",
 };

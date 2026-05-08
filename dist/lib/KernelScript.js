@@ -17,7 +17,7 @@ export class KernelScript {
     constructor(ns, args) {
         this._ns = ns;
         this._args = args;
-        this.onInit(ns);
+        this.onInit();
     }
     writeToPort(port, opcode, flags, payload) {
         const frame = convertDataToFrame(this._ns.pid, opcode, flags, true);
